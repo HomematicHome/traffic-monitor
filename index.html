@@ -1,3 +1,4 @@
+```html
 <!DOCTYPE html>
 <html>
 
@@ -129,21 +130,17 @@ color:lightblue;
 
 <div class="card">Letzte Aktualisierung: <span id="update_time">--</span></div>
 
-<h2>Analyse</h2>
-
-<div class="card">Rush Hour: <span id="rush_hour">--</span></div>
-<div class="card">Nachtverkehr: <span id="night_traffic">--</span></div>
-<div class="card">Lärm Hotspots: <span id="noise_hotspots">--</span></div>
+<h2>Lärmgrenzwerte</h2>
 
 <div class="lawbox">
 
-<b>Lärmgrenzwerte Vergleich</b><br><br>
+WHO Empfehlung: 53 dB<br>
+Grenzwert Neubau: 59 dB<br>
+Lärmsanierung Bestand: 67 dB<br><br>
 
-WHO Empfehlung (53 dB)<br>
-Grenzwert Neubau (59 dB)<br>
-Lärmsanierung Bestand (67 dB)<br><br>
+Aktueller Durchschnitt: <span id="law_result">--</span>
 
-Aktueller Durchschnitt: <span id="law_result">--</span><br><br>
+<br><br>
 
 <a href="https://www.who.int/publications/i/item/9789289053563" target="_blank">
 WHO Environmental Noise Guidelines
@@ -177,7 +174,7 @@ Lärmsanierung an Bundesfernstraßen
 
 <div id="traffic" class="page" style="display:none">
 
-<h1>Verkehr letzte 24 Stunden</h1>
+<h1>Verkehr letzte Stunden</h1>
 
 <canvas id="trafficChart"></canvas>
 
@@ -227,8 +224,10 @@ let data=await r.json()
 
 document.getElementById("cars_today").textContent=data.cars_today
 document.getElementById("cars_hour").textContent=data.cars_hour
+
 document.getElementById("noise10").textContent=data.noise_avg_10min
 document.getElementById("noise1h").textContent=data.noise_avg_1h
+
 document.getElementById("peak1h").textContent=data.noise_peak_1h
 document.getElementById("peak3s").textContent=data.noise_peak_3s
 
@@ -302,6 +301,45 @@ document.getElementById("law_result").textContent=text
 
 }
 
+
+/* HISTORY CHARTS */
+
+async function loadHistory(){
+
+let r=await fetch("traffic-history.json?"+Date.now())
+let data=await r.json()
+
+let labels=data.map(e=>e.time)
+
+let cars=data.map(e=>e.cars_hour)
+let noise=data.map(e=>e.noise1h)
+let peaks=data.map(e=>e.peak)
+
+new Chart(document.getElementById("trafficChart"),{
+type:"line",
+data:{labels:labels,datasets:[{label:"Autos/Stunde",data:cars,borderColor:"lime"}]}
+})
+
+new Chart(document.getElementById("noiseChart"),{
+type:"line",
+data:{labels:labels,datasets:[{label:"Ø Lärm 1h",data:noise,borderColor:"yellow"}]}
+})
+
+new Chart(document.getElementById("peakChart"),{
+type:"line",
+data:{labels:labels,datasets:[{label:"Peak",data:peaks,borderColor:"red"}]}
+})
+
+}
+
+
+/* AUTO UPDATE */
+
+loadTraffic()
+loadHistory()
+
+setInterval(loadTraffic,60000)
+
 </script>
 
 
@@ -316,4 +354,3 @@ Es werden keine Audioaufnahmen gespeichert und keine personenbezogenen Daten erh
 
 </html>
 ```
-
