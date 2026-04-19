@@ -1,4 +1,3 @@
-```html
 <!DOCTYPE html>
 <html>
 
@@ -17,8 +16,6 @@ background:#000;
 color:white;
 display:flex;
 }
-
-/* Menü */
 
 #menu{
 width:220px;
@@ -41,8 +38,6 @@ cursor:pointer;
 #menu button:hover{
 background:#444;
 }
-
-/* Inhalt */
 
 #content{
 flex:1;
@@ -70,13 +65,11 @@ margin-top:30px;
 <h2>Traffic Monitor</h2>
 
 <button onclick="showPage('dashboard')">Dashboard</button>
-<button onclick="showPage('traffic')">Verkehr</button>
-<button onclick="showPage('noise10')">Lärm 10 min</button>
-<button onclick="showPage('noise1h')">Lärm 1 h</button>
-<button onclick="showPage('peak')">Peak</button>
+<button onclick="showPage('traffic')">Verkehr Verlauf</button>
+<button onclick="showPage('noise')">Lärm Verlauf</button>
+<button onclick="showPage('peak')">Peak Verlauf</button>
 
 </div>
-
 
 <div id="content">
 
@@ -95,39 +88,36 @@ margin-top:30px;
 
 <div class="card">Letzte Aktualisierung: <span id="update_time">--</span></div>
 
+<h2>Analyse</h2>
+
+<div class="card">Rush Hour: <span id="rush_hour">--</span></div>
+<div class="card">Nachtverkehr: <span id="night_traffic">--</span></div>
+<div class="card">Lärm Hotspots: <span id="noise_hotspots">--</span></div>
+
 </div>
 
 
 <div id="traffic" class="page" style="display:none">
 
-<h1>Verkehr letzte Stunden</h1>
+<h1>Verkehr letzte 24 Stunden</h1>
 
 <canvas id="trafficChart"></canvas>
 
 </div>
 
 
-<div id="noise10" class="page" style="display:none">
+<div id="noise" class="page" style="display:none">
 
-<h1>Lärm Ø 10 Minuten</h1>
+<h1>Lärm Verlauf</h1>
 
-<canvas id="noise10Chart"></canvas>
-
-</div>
-
-
-<div id="noise1h" class="page" style="display:none">
-
-<h1>Lärm Ø 1 Stunde</h1>
-
-<canvas id="noise1hChart"></canvas>
+<canvas id="noiseChart"></canvas>
 
 </div>
 
 
 <div id="peak" class="page" style="display:none">
 
-<h1>Peak Lärm</h1>
+<h1>Peak Verlauf</h1>
 
 <canvas id="peakChart"></canvas>
 
@@ -135,7 +125,6 @@ margin-top:30px;
 
 
 </div>
-
 
 
 <script>
@@ -150,11 +139,8 @@ document.getElementById(page).style.display="block"
 
 }
 
-let labels=[]
-let trafficData=[]
-let noise10Data=[]
-let noise1hData=[]
-let peakData=[]
+
+/* DASHBOARD */
 
 async function loadTraffic(){
 
@@ -168,97 +154,155 @@ document.getElementById("noise1h").textContent=data.noise_avg_1h
 document.getElementById("peak1h").textContent=data.noise_peak_1h
 document.getElementById("peak3s").textContent=data.noise_peak_3s
 
-document.getElementById("update_time").textContent =
+document.getElementById("update_time").textContent=
 new Date().toLocaleTimeString()
 
-let time=new Date().toLocaleTimeString()
-
-labels.push(time)
-trafficData.push(data.cars_hour)
-noise10Data.push(data.noise_avg_10min)
-noise1hData.push(data.noise_avg_1h)
-peakData.push(data.noise_peak_1h)
-
-if(labels.length>24){
-
-labels.shift()
-trafficData.shift()
-noise10Data.shift()
-noise1hData.shift()
-peakData.shift()
-
 }
 
+
+/* CHARTS */
+
+let trafficChart
+let noiseChart
+let peakChart
+
+
+async function loadHistory(){
+
+let r = await fetch("traffic-history.json?"+Date.now())
+let history = await r.json()
+
+let labels=[]
+let cars=[]
+let noise=[]
+let peak=[]
+
+history.slice(-24).forEach(h=>{
+
+labels.push(h.time)
+cars.push(h.cars_hour)
+noise.push(h.noise1h)
+peak.push(h.peak)
+
+})
+
+trafficChart.data.labels=labels
+trafficChart.data.datasets[0].data=cars
 trafficChart.update()
-noise10Chart.update()
-noise1hChart.update()
+
+noiseChart.data.labels=labels
+noiseChart.data.datasets[0].data=noise
+noiseChart.update()
+
+peakChart.data.labels=labels
+peakChart.data.datasets[0].data=peak
 peakChart.update()
 
+analyzeTraffic(history)
+
 }
 
-let trafficChart=new Chart(
+
+trafficChart = new Chart(
 document.getElementById("trafficChart"),
 {
 type:"line",
 data:{
-labels:labels,
+labels:[],
 datasets:[{
 label:"Autos pro Stunde",
-data:trafficData,
+data:[],
 borderColor:"lime"
 }]
 }
 }
 )
 
-let noise10Chart=new Chart(
-document.getElementById("noise10Chart"),
+noiseChart = new Chart(
+document.getElementById("noiseChart"),
 {
 type:"line",
 data:{
-labels:labels,
+labels:[],
 datasets:[{
-label:"Lärm Ø 10 min",
-data:noise10Data,
+label:"Lärm Ø 1h",
+data:[],
 borderColor:"orange"
 }]
 }
 }
 )
 
-let noise1hChart=new Chart(
-document.getElementById("noise1hChart"),
-{
-type:"line",
-data:{
-labels:labels,
-datasets:[{
-label:"Lärm Ø 1 h",
-data:noise1hData,
-borderColor:"cyan"
-}]
-}
-}
-)
-
-let peakChart=new Chart(
+peakChart = new Chart(
 document.getElementById("peakChart"),
 {
 type:"line",
 data:{
-labels:labels,
+labels:[],
 datasets:[{
-label:"Peak Lärm",
-data:peakData,
+label:"Peak",
+data:[],
 borderColor:"red"
 }]
 }
 }
 )
 
+
+
+/* ANALYSE */
+
+function analyzeTraffic(history){
+
+let rushHour=0
+let rushTime=""
+
+let nightCars=0
+
+let hotspots=[]
+
+history.forEach(h=>{
+
+if(h.cars_hour>rushHour){
+
+rushHour=h.cars_hour
+rushTime=h.time
+
+}
+
+let hour=parseInt(h.time.split(":")[0])
+
+if(hour>=22 || hour<6){
+
+nightCars+=h.cars_hour
+
+}
+
+if(h.peak>70){
+
+hotspots.push(h.time+" ("+h.peak+" dB)")
+
+}
+
+})
+
+document.getElementById("rush_hour").textContent=
+rushTime+" ("+rushHour+" Autos)"
+
+document.getElementById("night_traffic").textContent=
+nightCars+" Autos"
+
+document.getElementById("noise_hotspots").textContent=
+hotspots.join(", ")
+
+}
+
+
 loadTraffic()
+loadHistory()
 
 setInterval(loadTraffic,60000)
+setInterval(loadHistory,60000)
 
 </script>
 
