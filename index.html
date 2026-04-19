@@ -1,49 +1,104 @@
+```html
 <!DOCTYPE html>
 <html>
+
 <head>
+
 <title>Traffic Monitor Völklingen</title>
+
 <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+
+<style>
+
+body{
+background:#000;
+color:white;
+font-family:Arial;
+text-align:center;
+margin:0;
+padding:40px;
+}
+
+h1{
+font-size:40px;
+margin-bottom:40px;
+}
+
+.stats{
+font-size:22px;
+margin-bottom:40px;
+}
+
+.card{
+margin:10px;
+}
+
+canvas{
+max-width:900px;
+margin:auto;
+}
+
+</style>
+
 </head>
 
 <body>
 
 <h1>Traffic Monitor Völklingen</h1>
 
-<div id="stats"></div>
+<div class="stats">
 
-<canvas id="chart"></canvas>
+<div class="card">
+Autos gesamt: <span id="cars_total">--</span>
+</div>
+
+<div class="card">
+Ø Lärm 10 min: <span id="noise10">--</span> dB
+</div>
+
+<div class="card">
+Ø Lärm 1 h: <span id="noise1h">--</span> dB
+</div>
+
+<div class="card">
+Peak 1 h: <span id="peak1h">--</span> dB
+</div>
+
+<div class="card">
+Peak 3 s: <span id="peak3s">--</span> dB
+</div>
+
+</div>
 
 <script>
 
-fetch("traffic.json")
-.then(r => r.json())
-.then(data => {
+async function loadTraffic(){
 
-document.getElementById("stats").innerHTML =
-"Autos heute: " + data.cars +
-"<br>Durchschnitt Lärm: " + data.avg_noise + " dB";
+let response = await fetch("traffic.json?" + Date.now())
+let data = await response.json()
 
-new Chart(
-document.getElementById("chart"),
-{
-type: "line",
-data: {
-labels: data.hours,
-datasets: [{
-label: "Autos pro Stunde",
-data: data.hourly
-}]
+document.getElementById("cars_total").textContent = data.cars_total
+document.getElementById("noise10").textContent = data.noise_avg_10min
+document.getElementById("noise1h").textContent = data.noise_avg_1h
+document.getElementById("peak1h").textContent = data.noise_peak_1h
+document.getElementById("peak3s").textContent = data.noise_peak_3s
+
 }
-});
 
-});
+loadTraffic()
+
+setInterval(loadTraffic,60000)
 
 </script>
+
 <hr>
 
-<p style="font-size:12px; color:gray;">
+<p style="font-size:12px;color:gray;">
 Diese Seite zeigt anonymisierte Verkehrsdaten einer privaten Messstation.<br>
 Es werden keine Audioaufnahmen gespeichert und keine personenbezogenen Daten erhoben.
 </p>
+
 </body>
+
 </html>
+```
