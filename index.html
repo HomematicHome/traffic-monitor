@@ -93,6 +93,19 @@ a{
 color:lightblue;
 }
 
+/* MAP */
+
+.mapbox{
+margin-top:30px;
+max-width:900px;
+}
+
+#map_image{
+width:100%;
+border-radius:6px;
+filter:brightness(0.6) contrast(1.1);
+}
+
 </style>
 
 </head>
@@ -108,6 +121,7 @@ color:lightblue;
 <button onclick="showPage('noise')">Lärm Verlauf</button>
 <button onclick="showPage('peak')">Peak Verlauf</button>
 <button onclick="showPage('heatmap')">Heatmap</button>
+<button onclick="showPage('map')">Messstrecke</button>
 
 </div>
 
@@ -208,6 +222,16 @@ Lärmsanierung an Bundesfernstraßen
 <div id="heatmap" class="page" style="display:none">
 <h1>Lärm Heatmap</h1>
 <canvas id="heatmapChart"></canvas>
+</div>
+
+
+<div id="map" class="page" style="display:none">
+<h1>Messstrecke</h1>
+
+<div class="mapbox">
+<img src="map_1.png" id="map_image">
+</div>
+
 </div>
 
 
