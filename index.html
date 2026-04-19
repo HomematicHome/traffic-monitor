@@ -56,7 +56,7 @@ justify-content:space-between;
 }
 
 .traffic-light{
-width:80px;
+width:90px;
 background:#111;
 padding:10px;
 border-radius:10px;
@@ -71,6 +71,7 @@ background:#333;
 }
 
 .red{background:red;}
+.orange{background:orange;}
 .yellow{background:yellow;}
 .green{background:lime;}
 
@@ -85,6 +86,7 @@ padding:15px;
 background:#111;
 border-radius:6px;
 font-size:18px;
+line-height:1.6em;
 }
 
 a{
@@ -105,6 +107,7 @@ color:lightblue;
 <button onclick="showPage('traffic')">Verkehr Verlauf</button>
 <button onclick="showPage('noise')">Lärm Verlauf</button>
 <button onclick="showPage('peak')">Peak Verlauf</button>
+<button onclick="showPage('heatmap')">Heatmap</button>
 
 </div>
 
@@ -128,15 +131,26 @@ color:lightblue;
 <div class="card">Peak 1 h: <span id="peak1h">--</span> dB</div>
 <div class="card">Peak 3 s: <span id="peak3s">--</span> dB</div>
 
+<div class="card">Lärmstatus: <span id="noise_status">--</span></div>
+<div class="card">Spitzenlärm: <span id="peak_status">--</span></div>
+
+<div class="card">Rush Hour: <span id="rush_hour">--</span></div>
+<div class="card">Nachtverkehr: <span id="night_traffic">--</span></div>
+
+<div class="card">Verkehrsindex: <span id="traffic_index">--</span></div>
+<div class="card">Belastung: <span id="traffic_index_status">--</span></div>
+
 <div class="card">Letzte Aktualisierung: <span id="update_time">--</span></div>
 
 <h2>Lärmgrenzwerte</h2>
 
 <div class="lawbox">
 
-WHO Empfehlung: 53 dB<br>
-Grenzwert Neubau: 59 dB<br>
-Lärmsanierung Bestand: 67 dB<br><br>
+WHO Empfehlung: <b>53 dB</b><br>
+Grenzwert Neubau: <b>59 dB</b><br>
+Kritische Belastung: <b>65 dB</b><br>
+Lärmsanierung Bestand: <b>67 dB</b><br>
+Gesundheitskritisch: <b>70 dB</b><br><br>
 
 Aktueller Durchschnitt: <span id="law_result">--</span>
 
@@ -162,6 +176,7 @@ Lärmsanierung an Bundesfernstraßen
 <div class="traffic-light">
 
 <div id="light_red" class="light"></div>
+<div id="light_orange" class="light"></div>
 <div id="light_yellow" class="light"></div>
 <div id="light_green" class="light"></div>
 
@@ -173,29 +188,26 @@ Lärmsanierung an Bundesfernstraßen
 
 
 <div id="traffic" class="page" style="display:none">
-
-<h1>Verkehr letzte Stunden</h1>
-
+<h1>Verkehr Verlauf</h1>
 <canvas id="trafficChart"></canvas>
-
 </div>
 
 
 <div id="noise" class="page" style="display:none">
-
 <h1>Lärm Verlauf</h1>
-
 <canvas id="noiseChart"></canvas>
-
 </div>
 
 
 <div id="peak" class="page" style="display:none">
-
 <h1>Peak Verlauf</h1>
-
 <canvas id="peakChart"></canvas>
+</div>
 
+
+<div id="heatmap" class="page" style="display:none">
+<h1>Lärm Heatmap</h1>
+<canvas id="heatmapChart"></canvas>
 </div>
 
 
@@ -215,7 +227,6 @@ document.getElementById(page).style.display="block"
 }
 
 
-/* DASHBOARD */
 
 async function loadTraffic(){
 
@@ -231,13 +242,17 @@ document.getElementById("noise1h").textContent=data.noise_avg_1h
 document.getElementById("peak1h").textContent=data.noise_peak_1h
 document.getElementById("peak3s").textContent=data.noise_peak_3s
 
-document.getElementById("update_time").textContent=
-new Date().toLocaleTimeString()
+document.getElementById("update_time").textContent=new Date().toLocaleTimeString()
 
 updateTrafficLight(data)
 updateLawCheck(data)
+updateNoiseStatus(data)
+updatePeakStatus(data)
+updateTrafficAnalysis(data)
+updateTrafficIndex(data)
 
 }
+
 
 
 /* AMPEL */
@@ -246,27 +261,118 @@ function updateTrafficLight(data){
 
 let noise=data.noise_avg_1h
 
-document.getElementById("light_red").classList.remove("red")
-document.getElementById("light_yellow").classList.remove("yellow")
-document.getElementById("light_green").classList.remove("green")
+document.querySelectorAll(".light").forEach(l=>l.classList.remove("red","orange","yellow","green"))
 
-if(noise>67){
-
+if(noise>=65)
 document.getElementById("light_red").classList.add("red")
 
-}
-else if(noise>53){
+else if(noise>=59)
+document.getElementById("light_orange").classList.add("orange")
 
+else if(noise>=53)
 document.getElementById("light_yellow").classList.add("yellow")
 
-}
-else{
-
+else
 document.getElementById("light_green").classList.add("green")
 
 }
 
+
+
+/* LÄRMSTATUS */
+
+function updateNoiseStatus(data){
+
+let n=data.noise_avg_1h
+let text=""
+
+if(n>=65) text="gesundheitsschädlich"
+else if(n>=59) text="kritisch"
+else if(n>=53) text="erhöht"
+else text="ruhig"
+
+document.getElementById("noise_status").textContent=text
+
 }
+
+
+
+/* PEAK STATUS */
+
+function updatePeakStatus(data){
+
+let p=data.noise_peak_1h
+let text=""
+
+if(p>=85) text="extrem laut"
+else if(p>=75) text="sehr laut"
+else if(p>=65) text="laut"
+else text="normal"
+
+document.getElementById("peak_status").textContent=text
+
+}
+
+
+
+/* VERKEHR ANALYSE */
+
+function updateTrafficAnalysis(data){
+
+let cars=data.cars_hour
+let hour=new Date().getHours()
+
+if(cars>40)
+document.getElementById("rush_hour").textContent="hoch"
+else if(cars>20)
+document.getElementById("rush_hour").textContent="mittel"
+else
+document.getElementById("rush_hour").textContent="gering"
+
+if(hour>=22 || hour<=5){
+
+if(cars>10)
+document.getElementById("night_traffic").textContent="ungewöhnlich hoch"
+else
+document.getElementById("night_traffic").textContent="normal"
+
+}else{
+document.getElementById("night_traffic").textContent="Tagbetrieb"
+}
+
+}
+
+
+
+/* UBA VERKEHRSINDEX */
+
+function updateTrafficIndex(data){
+
+let cars=data.cars_hour
+let noise=data.noise_avg_1h
+let peak=data.noise_peak_1h
+
+let index=
+(cars*1.2)+
+(noise-40)*1.8+
+(peak-60)*0.8
+
+index=Math.max(0,Math.min(100,index))
+
+document.getElementById("traffic_index").textContent=Math.round(index)+"/100"
+
+let text=""
+
+if(index<20) text="sehr ruhig"
+else if(index<40) text="moderat"
+else if(index<60) text="erhöht"
+else if(index<80) text="stark belastet"
+else text="extrem belastet"
+
+document.getElementById("traffic_index_status").textContent=text
+
+}
+
 
 
 /* GESETZ CHECK */
@@ -276,33 +382,24 @@ function updateLawCheck(data){
 let noise=data.noise_avg_1h
 let text=""
 
-if(noise>67){
-
-text="Über Lärmsanierungsschwelle ("+noise+" dB)"
-
-}
-else if(noise>59){
-
+if(noise>=70)
+text="Gesundheitskritischer Bereich ("+noise+" dB)"
+else if(noise>=65)
+text="Kritische Belastung ("+noise+" dB)"
+else if(noise>=59)
+text="Über Grenzwert Neubau ("+noise+" dB)"
+else if(noise>=53)
 text="Über WHO Empfehlung ("+noise+" dB)"
-
-}
-else if(noise>53){
-
-text="WHO Empfehlung überschritten ("+noise+" dB)"
-
-}
-else{
-
+else
 text="Unter WHO Empfehlung ("+noise+" dB)"
-
-}
 
 document.getElementById("law_result").textContent=text
 
 }
 
 
-/* HISTORY CHARTS */
+
+/* HISTORY */
 
 async function loadHistory(){
 
@@ -322,7 +419,7 @@ data:{labels:labels,datasets:[{label:"Autos/Stunde",data:cars,borderColor:"lime"
 
 new Chart(document.getElementById("noiseChart"),{
 type:"line",
-data:{labels:labels,datasets:[{label:"Ø Lärm 1h",data:noise,borderColor:"yellow"}]}
+data:{labels:labels,datasets:[{label:"Ø Lärm",data:noise,borderColor:"yellow"}]}
 })
 
 new Chart(document.getElementById("peakChart"),{
@@ -330,10 +427,14 @@ type:"line",
 data:{labels:labels,datasets:[{label:"Peak",data:peaks,borderColor:"red"}]}
 })
 
+new Chart(document.getElementById("heatmapChart"),{
+type:"bar",
+data:{labels:labels,datasets:[{label:"Lärm Heatmap",data:noise,backgroundColor:"orange"}]}
+})
+
 }
 
 
-/* AUTO UPDATE */
 
 loadTraffic()
 loadHistory()
@@ -347,7 +448,8 @@ setInterval(loadTraffic,60000)
 
 <p style="font-size:12px;color:gray;padding:20px;">
 Diese Seite zeigt anonymisierte Verkehrsdaten einer privaten Messstation.<br>
-Es werden keine Audioaufnahmen gespeichert und keine personenbezogenen Daten erhoben.
+Es werden keine Audioaufnahmen gespeichert und keine personenbezogenen Daten erhoben.<br>
+Die dargestellten Werte dienen der Orientierung und ersetzen keine amtliche Lärmberechnung.
 </p>
 
 </body>
