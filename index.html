@@ -1,3 +1,4 @@
+```html
 <!DOCTYPE html>
 <html>
 
@@ -49,22 +50,16 @@ font-size:22px;
 margin-bottom:12px;
 }
 
-/* DASHBOARD LAYOUT */
-
 .dashboard{
 display:flex;
 justify-content:space-between;
-align-items:flex-start;
 }
-
-/* AMPEL */
 
 .traffic-light{
 width:80px;
 background:#111;
 padding:10px;
 border-radius:10px;
-text-align:center;
 }
 
 .light{
@@ -82,6 +77,18 @@ background:#333;
 canvas{
 max-width:900px;
 margin-top:30px;
+}
+
+.lawbox{
+margin-top:20px;
+padding:15px;
+background:#111;
+border-radius:6px;
+font-size:18px;
+}
+
+a{
+color:lightblue;
 }
 
 </style>
@@ -129,10 +136,32 @@ margin-top:30px;
 <div class="card">Nachtverkehr: <span id="night_traffic">--</span></div>
 <div class="card">Lärm Hotspots: <span id="noise_hotspots">--</span></div>
 
+<div class="lawbox">
+
+<b>Lärmgrenzwerte Vergleich</b><br><br>
+
+WHO Empfehlung (53 dB)<br>
+Grenzwert Neubau (59 dB)<br>
+Lärmsanierung Bestand (67 dB)<br><br>
+
+Aktueller Durchschnitt: <span id="law_result">--</span><br><br>
+
+<a href="https://www.who.int/publications/i/item/9789289053563" target="_blank">
+WHO Environmental Noise Guidelines
+</a><br>
+
+<a href="https://www.gesetze-im-internet.de/bimschv_16/" target="_blank">
+16. BImSchV Verkehrslärmschutzverordnung
+</a><br>
+
+<a href="https://www.bmvi.de/SharedDocs/DE/Artikel/StB/laermsanierung-an-bundesfernstrassen.html" target="_blank">
+Lärmsanierung an Bundesfernstraßen
+</a>
+
 </div>
 
+</div>
 
-<!-- AMPEL -->
 
 <div class="traffic-light">
 
@@ -177,7 +206,6 @@ margin-top:30px;
 </div>
 
 
-
 <script>
 
 function showPage(page){
@@ -209,27 +237,27 @@ document.getElementById("update_time").textContent=
 new Date().toLocaleTimeString()
 
 updateTrafficLight(data)
+updateLawCheck(data)
 
 }
 
 
-/* AMPEL LOGIK */
+/* AMPEL */
 
 function updateTrafficLight(data){
 
-let cars=data.cars_hour
-let noise=data.noise_avg_10min
+let noise=data.noise_avg_1h
 
 document.getElementById("light_red").classList.remove("red")
 document.getElementById("light_yellow").classList.remove("yellow")
 document.getElementById("light_green").classList.remove("green")
 
-if(cars>40 || noise>70){
+if(noise>67){
 
 document.getElementById("light_red").classList.add("red")
 
 }
-else if(cars>20 || noise>60){
+else if(noise>53){
 
 document.getElementById("light_yellow").classList.add("yellow")
 
@@ -243,149 +271,37 @@ document.getElementById("light_green").classList.add("green")
 }
 
 
-/* CHARTS */
+/* GESETZ CHECK */
 
-let trafficChart
-let noiseChart
-let peakChart
+function updateLawCheck(data){
 
+let noise=data.noise_avg_1h
+let text=""
 
-async function loadHistory(){
+if(noise>67){
 
-let r = await fetch("traffic-history.json?"+Date.now())
-let history = await r.json()
+text="Über Lärmsanierungsschwelle ("+noise+" dB)"
 
-let labels=[]
-let cars=[]
-let noise=[]
-let peak=[]
+}
+else if(noise>59){
 
-history.slice(-24).forEach(h=>{
+text="Über WHO Empfehlung ("+noise+" dB)"
 
-labels.push(h.time)
-cars.push(h.cars_hour)
-noise.push(h.noise1h)
-peak.push(h.peak)
+}
+else if(noise>53){
 
-})
+text="WHO Empfehlung überschritten ("+noise+" dB)"
 
-trafficChart.data.labels=labels
-trafficChart.data.datasets[0].data=cars
-trafficChart.update()
+}
+else{
 
-noiseChart.data.labels=labels
-noiseChart.data.datasets[0].data=noise
-noiseChart.update()
-
-peakChart.data.labels=labels
-peakChart.data.datasets[0].data=peak
-peakChart.update()
-
-analyzeTraffic(history)
+text="Unter WHO Empfehlung ("+noise+" dB)"
 
 }
 
-
-trafficChart = new Chart(
-document.getElementById("trafficChart"),
-{
-type:"line",
-data:{
-labels:[],
-datasets:[{
-label:"Autos pro Stunde",
-data:[],
-borderColor:"lime"
-}]
-}
-}
-)
-
-noiseChart = new Chart(
-document.getElementById("noiseChart"),
-{
-type:"line",
-data:{
-labels:[],
-datasets:[{
-label:"Lärm Ø 1h",
-data:[],
-borderColor:"orange"
-}]
-}
-}
-)
-
-peakChart = new Chart(
-document.getElementById("peakChart"),
-{
-type:"line",
-data:{
-labels:[],
-datasets:[{
-label:"Peak",
-data:[],
-borderColor:"red"
-}]
-}
-}
-)
-
-
-
-/* ANALYSE */
-
-function analyzeTraffic(history){
-
-let rushHour=0
-let rushTime=""
-
-let nightCars=0
-
-let hotspots=[]
-
-history.forEach(h=>{
-
-if(h.cars_hour>rushHour){
-
-rushHour=h.cars_hour
-rushTime=h.time
+document.getElementById("law_result").textContent=text
 
 }
-
-let hour=parseInt(h.time.split(":")[0])
-
-if(hour>=22 || hour<6){
-
-nightCars+=h.cars_hour
-
-}
-
-if(h.peak>70){
-
-hotspots.push(h.time+" ("+h.peak+" dB)")
-
-}
-
-})
-
-document.getElementById("rush_hour").textContent=
-rushTime+" ("+rushHour+" Autos)"
-
-document.getElementById("night_traffic").textContent=
-nightCars+" Autos"
-
-document.getElementById("noise_hotspots").textContent=
-hotspots.join(", ")
-
-}
-
-
-loadTraffic()
-loadHistory()
-
-setInterval(loadTraffic,60000)
-setInterval(loadHistory,60000)
 
 </script>
 
@@ -401,3 +317,4 @@ Es werden keine Audioaufnahmen gespeichert und keine personenbezogenen Daten erh
 
 </html>
 ```
+
