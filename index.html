@@ -92,29 +92,15 @@ a{
 color:lightblue;
 }
 
-/* MAP */
-
 .mapbox{
 margin-top:30px;
 max-width:900px;
-position:relative;
 }
 
 #map_image{
 width:100%;
 border-radius:6px;
-filter:brightness(0.6) contrast(1.1);
-}
-
-#noise_overlay{
-position:absolute;
-top:0;
-left:0;
-width:100%;
-height:100%;
-border-radius:6px;
-pointer-events:none;
-opacity:0.35;
+filter:brightness(0.7);
 }
 
 </style>
@@ -129,6 +115,7 @@ opacity:0.35;
 
 <button onclick="showPage('dashboard')">Dashboard</button>
 <button onclick="showPage('traffic')">Verkehr Verlauf</button>
+<button onclick="showPage('daily')">Autos täglich</button>
 <button onclick="showPage('noise')">Lärm Verlauf</button>
 <button onclick="showPage('peak')">Peak Verlauf</button>
 <button onclick="showPage('heatmap')">Heatmap</button>
@@ -136,8 +123,9 @@ opacity:0.35;
 
 </div>
 
-
 <div id="content">
+
+<!-- DASHBOARD -->
 
 <div id="dashboard" class="page">
 
@@ -179,24 +167,9 @@ Gesundheitskritisch: <b>70 dB</b><br><br>
 
 Aktueller Durchschnitt: <span id="law_result">--</span>
 
-<br><br>
-
-<a href="https://www.who.int/publications/i/item/9789289053563" target="_blank">
-WHO Environmental Noise Guidelines
-</a><br>
-
-<a href="https://www.gesetze-im-internet.de/bimschv_16/" target="_blank">
-16. BImSchV Verkehrslärmschutzverordnung
-</a><br>
-
-<a href="https://www.bmvi.de/SharedDocs/DE/Artikel/StB/laermsanierung-an-bundesfernstrassen.html" target="_blank">
-Lärmsanierung an Bundesfernstraßen
-</a>
-
 </div>
 
 </div>
-
 
 <div class="traffic-light">
 
@@ -211,44 +184,54 @@ Lärmsanierung an Bundesfernstraßen
 
 </div>
 
+<!-- TRAFFIC -->
 
 <div id="traffic" class="page" style="display:none">
-<h1>Verkehr Verlauf</h1>
+<h1>Verkehr Verlauf (Autos / Stunde)</h1>
 <canvas id="trafficChart"></canvas>
 </div>
 
+<!-- DAILY -->
+
+<div id="daily" class="page" style="display:none">
+<h1>Autos täglich</h1>
+<canvas id="dailyChart"></canvas>
+</div>
+
+<!-- NOISE -->
 
 <div id="noise" class="page" style="display:none">
-<h1>Lärm Verlauf</h1>
+<h1>Lärm Verlauf (dB)</h1>
 <canvas id="noiseChart"></canvas>
 </div>
 
+<!-- PEAK -->
 
 <div id="peak" class="page" style="display:none">
-<h1>Peak Verlauf</h1>
+<h1>Peak Verlauf (dB)</h1>
 <canvas id="peakChart"></canvas>
 </div>
 
+<!-- HEATMAP -->
 
 <div id="heatmap" class="page" style="display:none">
 <h1>Lärm Heatmap</h1>
 <canvas id="heatmapChart"></canvas>
 </div>
 
+<!-- MAP -->
 
 <div id="map" class="page" style="display:none">
+
 <h1>Messstrecke</h1>
 
 <div class="mapbox">
 <img src="map_1.png" id="map_image">
-<div id="noise_overlay"></div>
 </div>
 
 </div>
 
-
 </div>
-
 
 <script>
 
@@ -261,8 +244,6 @@ p.style.display="none"
 document.getElementById(page).style.display="block"
 
 }
-
-
 
 async function loadTraffic(){
 
@@ -281,41 +262,13 @@ document.getElementById("peak3s").textContent=data.noise_peak_3s
 document.getElementById("update_time").textContent=new Date().toLocaleTimeString()
 
 updateTrafficLight(data)
-updateLawCheck(data)
 updateNoiseStatus(data)
 updatePeakStatus(data)
 updateTrafficAnalysis(data)
 updateTrafficIndex(data)
-updateMapNoise(data)
+updateLawCheck(data)
 
 }
-
-
-
-/* MAP NOISE OVERLAY */
-
-function updateMapNoise(data){
-
-let noise=data.noise_avg_1h
-let overlay=document.getElementById("noise_overlay")
-
-if(noise>=65)
-overlay.style.background="red"
-
-else if(noise>=59)
-overlay.style.background="orange"
-
-else if(noise>=53)
-overlay.style.background="yellow"
-
-else
-overlay.style.background="lime"
-
-}
-
-
-
-/* AMPEL */
 
 function updateTrafficLight(data){
 
@@ -325,21 +278,14 @@ document.querySelectorAll(".light").forEach(l=>l.classList.remove("red","orange"
 
 if(noise>=65)
 document.getElementById("light_red").classList.add("red")
-
 else if(noise>=59)
 document.getElementById("light_orange").classList.add("orange")
-
 else if(noise>=53)
 document.getElementById("light_yellow").classList.add("yellow")
-
 else
 document.getElementById("light_green").classList.add("green")
 
 }
-
-
-
-/* LÄRMSTATUS */
 
 function updateNoiseStatus(data){
 
@@ -355,10 +301,6 @@ document.getElementById("noise_status").textContent=text
 
 }
 
-
-
-/* PEAK STATUS */
-
 function updatePeakStatus(data){
 
 let p=data.noise_peak_1h
@@ -372,10 +314,6 @@ else text="normal"
 document.getElementById("peak_status").textContent=text
 
 }
-
-
-
-/* VERKEHR ANALYSE */
 
 function updateTrafficAnalysis(data){
 
@@ -402,20 +340,13 @@ document.getElementById("night_traffic").textContent="Tagbetrieb"
 
 }
 
-
-
-/* UBA VERKEHRSINDEX */
-
 function updateTrafficIndex(data){
 
 let cars=data.cars_hour
 let noise=data.noise_avg_1h
 let peak=data.noise_peak_1h
 
-let index=
-(cars*1.2)+
-(noise-40)*1.8+
-(peak-60)*0.8
+let index=(cars*1.2)+(noise-40)*1.8+(peak-60)*0.8
 
 index=Math.max(0,Math.min(100,index))
 
@@ -432,10 +363,6 @@ else text="extrem belastet"
 document.getElementById("traffic_index_status").textContent=text
 
 }
-
-
-
-/* GESETZ CHECK */
 
 function updateLawCheck(data){
 
@@ -457,44 +384,44 @@ document.getElementById("law_result").textContent=text
 
 }
 
-
-
-/* HISTORY */
-
 async function loadHistory(){
 
 let r=await fetch("traffic-history.json?"+Date.now())
 let data=await r.json()
 
 let labels=data.map(e=>e.time)
-
 let cars=data.map(e=>e.cars_hour)
 let noise=data.map(e=>e.noise1h)
 let peaks=data.map(e=>e.peak)
 
 new Chart(document.getElementById("trafficChart"),{
 type:"line",
-data:{labels:labels,datasets:[{label:"Autos/Stunde",data:cars,borderColor:"lime"}]}
+data:{labels:labels,datasets:[{label:"Autos / Stunde",data:cars,borderColor:"lime"}]}
 })
 
 new Chart(document.getElementById("noiseChart"),{
 type:"line",
-data:{labels:labels,datasets:[{label:"Ø Lärm",data:noise,borderColor:"yellow"}]}
+data:{labels:labels,datasets:[{label:"Ø Lärm (dB)",data:noise,borderColor:"yellow"}]}
 })
 
 new Chart(document.getElementById("peakChart"),{
 type:"line",
-data:{labels:labels,datasets:[{label:"Peak",data:peaks,borderColor:"red"}]}
+data:{labels:labels,datasets:[{label:"Peak (dB)",data:peaks,borderColor:"red"}]}
 })
 
 new Chart(document.getElementById("heatmapChart"),{
 type:"bar",
-data:{labels:labels,datasets:[{label:"Lärm Heatmap",data:noise,backgroundColor:"orange"}]}
+data:{labels:labels,datasets:[{label:"Lärm Heatmap (dB)",data:noise,backgroundColor:"orange"}]}
+})
+
+let dailyCars=data.reduce((sum,e)=>sum+e.cars_hour,0)
+
+new Chart(document.getElementById("dailyChart"),{
+type:"bar",
+data:{labels:["Heute"],datasets:[{label:"Autos heute",data:[dailyCars],backgroundColor:"lime"}]}
 })
 
 }
-
-
 
 loadTraffic()
 loadHistory()
@@ -503,16 +430,6 @@ setInterval(loadTraffic,60000)
 
 </script>
 
-
-<hr>
-
-<p style="font-size:12px;color:gray;padding:20px;">
-Diese Seite zeigt anonymisierte Verkehrsdaten einer privaten Messstation.<br>
-Es werden keine Audioaufnahmen gespeichert und keine personenbezogenen Daten erhoben.<br>
-Die dargestellten Werte dienen der Orientierung und ersetzen keine amtliche Lärmberechnung.
-</p>
-
 </body>
 
 </html>
-```
