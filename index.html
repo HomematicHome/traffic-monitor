@@ -11,31 +11,49 @@
 <style>
 
 body{
+margin:0;
+font-family:Arial;
 background:#000;
 color:white;
-font-family:Arial;
-text-align:center;
-margin:0;
+display:flex;
+}
+
+/* Menü */
+
+#menu{
+width:220px;
+background:#111;
+padding:20px;
+height:100vh;
+}
+
+#menu button{
+display:block;
+width:100%;
+margin:10px 0;
+padding:10px;
+background:#222;
+color:white;
+border:none;
+cursor:pointer;
+}
+
+#menu button:hover{
+background:#444;
+}
+
+#content{
+flex:1;
 padding:40px;
 }
 
-h1{
-font-size:40px;
-margin-bottom:40px;
-}
-
-.stats{
-font-size:22px;
-margin-bottom:40px;
-}
-
 .card{
-margin:10px;
+font-size:22px;
+margin-bottom:15px;
 }
 
 canvas{
 max-width:900px;
-margin:auto;
 }
 
 </style>
@@ -44,12 +62,30 @@ margin:auto;
 
 <body>
 
-<h1>Traffic Monitor Völklingen</h1>
+<div id="menu">
 
-<div class="stats">
+<h2>Traffic</h2>
+
+<button onclick="showPage('dashboard')">Dashboard</button>
+<button onclick="showPage('traffic')">Verkehr</button>
+<button onclick="showPage('noise10')">Lärm 10 min</button>
+<button onclick="showPage('noise1h')">Lärm 1 h</button>
+<button onclick="showPage('peak')">Peak</button>
+
+</div>
+
+<div id="content">
+
+<div id="dashboard" class="page">
+
+<h1>Dashboard</h1>
 
 <div class="card">
-Autos gesamt: <span id="cars_total">--</span>
+Autos heute: <span id="cars_today">--</span>
+</div>
+
+<div class="card">
+Autos letzte Stunde: <span id="cars_hour">--</span>
 </div>
 
 <div class="card">
@@ -70,20 +106,154 @@ Peak 3 s: <span id="peak3s">--</span> dB
 
 </div>
 
+<div id="traffic" class="page" style="display:none">
+
+<h1>Verkehr pro Stunde</h1>
+
+<canvas id="trafficChart"></canvas>
+
+</div>
+
+<div id="noise10" class="page" style="display:none">
+
+<h1>Lärm Ø 10 min</h1>
+
+<canvas id="noise10Chart"></canvas>
+
+</div>
+
+<div id="noise1h" class="page" style="display:none">
+
+<h1>Lärm Ø 1 h</h1>
+
+<canvas id="noise1hChart"></canvas>
+
+</div>
+
+<div id="peak" class="page" style="display:none">
+
+<h1>Peak Lärm</h1>
+
+<canvas id="peakChart"></canvas>
+
+</div>
+
+</div>
+
 <script>
+
+function showPage(page){
+
+document.querySelectorAll(".page").forEach(p=>{
+p.style.display="none"
+})
+
+document.getElementById(page).style.display="block"
+
+}
+
+let labels=[]
+let trafficData=[]
+let noise10Data=[]
+let noise1hData=[]
+let peakData=[]
 
 async function loadTraffic(){
 
-let response = await fetch("traffic.json?" + Date.now())
-let data = await response.json()
+let r=await fetch("traffic.json?"+Date.now())
+let data=await r.json()
 
-document.getElementById("cars_total").textContent = data.cars_total
-document.getElementById("noise10").textContent = data.noise_avg_10min
-document.getElementById("noise1h").textContent = data.noise_avg_1h
-document.getElementById("peak1h").textContent = data.noise_peak_1h
-document.getElementById("peak3s").textContent = data.noise_peak_3s
+document.getElementById("cars_today").textContent=data.cars_today
+document.getElementById("cars_hour").textContent=data.cars_hour
+document.getElementById("noise10").textContent=data.noise_avg_10min
+document.getElementById("noise1h").textContent=data.noise_avg_1h
+document.getElementById("peak1h").textContent=data.noise_peak_1h
+document.getElementById("peak3s").textContent=data.noise_peak_3s
+
+let time=new Date().toLocaleTimeString()
+
+labels.push(time)
+trafficData.push(data.cars_hour)
+noise10Data.push(data.noise_avg_10min)
+noise1hData.push(data.noise_avg_1h)
+peakData.push(data.noise_peak_1h)
+
+if(labels.length>24){
+
+labels.shift()
+trafficData.shift()
+noise10Data.shift()
+noise1hData.shift()
+peakData.shift()
 
 }
+
+trafficChart.update()
+noise10Chart.update()
+noise1hChart.update()
+peakChart.update()
+
+}
+
+let trafficChart=new Chart(
+document.getElementById("trafficChart"),
+{
+type:"line",
+data:{
+labels:labels,
+datasets:[{
+label:"Autos pro Stunde",
+data:trafficData,
+borderColor:"lime"
+}]
+}
+}
+)
+
+let noise10Chart=new Chart(
+document.getElementById("noise10Chart"),
+{
+type:"line",
+data:{
+labels:labels,
+datasets:[{
+label:"Lärm Ø 10 min",
+data:noise10Data,
+borderColor:"orange"
+}]
+}
+}
+)
+
+let noise1hChart=new Chart(
+document.getElementById("noise1hChart"),
+{
+type:"line",
+data:{
+labels:labels,
+datasets:[{
+label:"Lärm Ø 1 h",
+data:noise1hData,
+borderColor:"cyan"
+}]
+}
+}
+)
+
+let peakChart=new Chart(
+document.getElementById("peakChart"),
+{
+type:"line",
+data:{
+labels:labels,
+datasets:[{
+label:"Peak Lärm",
+data:peakData,
+borderColor:"red"
+}]
+}
+}
+)
 
 loadTraffic()
 
@@ -93,7 +263,7 @@ setInterval(loadTraffic,60000)
 
 <hr>
 
-<p style="font-size:12px;color:gray;">
+<p style="font-size:12px;color:gray;padding:20px;">
 Diese Seite zeigt anonymisierte Verkehrsdaten einer privaten Messstation.<br>
 Es werden keine Audioaufnahmen gespeichert und keine personenbezogenen Daten erhoben.
 </p>
