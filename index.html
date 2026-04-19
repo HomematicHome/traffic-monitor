@@ -98,12 +98,24 @@ color:lightblue;
 .mapbox{
 margin-top:30px;
 max-width:900px;
+position:relative;
 }
 
 #map_image{
 width:100%;
 border-radius:6px;
 filter:brightness(0.6) contrast(1.1);
+}
+
+#noise_overlay{
+position:absolute;
+top:0;
+left:0;
+width:100%;
+height:100%;
+border-radius:6px;
+pointer-events:none;
+opacity:0.35;
 }
 
 </style>
@@ -230,6 +242,7 @@ Lärmsanierung an Bundesfernstraßen
 
 <div class="mapbox">
 <img src="map_1.png" id="map_image">
+<div id="noise_overlay"></div>
 </div>
 
 </div>
@@ -274,6 +287,30 @@ updateNoiseStatus(data)
 updatePeakStatus(data)
 updateTrafficAnalysis(data)
 updateTrafficIndex(data)
+updateMapNoise(data)
+
+}
+
+
+
+/* MAP NOISE OVERLAY */
+
+function updateMapNoise(data){
+
+let noise=data.noise_avg_1h
+let overlay=document.getElementById("noise_overlay")
+
+if(noise>=65)
+overlay.style.background="red"
+
+else if(noise>=59)
+overlay.style.background="orange"
+
+else if(noise>=53)
+overlay.style.background="yellow"
+
+else
+overlay.style.background="lime"
 
 }
 
