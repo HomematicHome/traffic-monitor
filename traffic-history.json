@@ -1,1 +1,1 @@
-[{"cars_hour": 165, "date": "2026-04-21", "noise10": 63.19, "noise1h": 63.68, "peak": 89.0, "time": "15:40"}, {"cars_hour": 198, "date": "2026-04-21", "noise10": 64.36, "noise1h": 63.88, "peak": 87.4, "time": "15:50"}]
+[{"cars_hour": 165, "date": "2026-04-21", "noise10": 63.19, "noise1h": 63.68, "peak": 89.0, "time": "15:40"}, {"cars_hour": 198, "date": "2026-04-21", "noise10": 64.36, "noise1h": 63.88, "peak": 87.4, "time": "15:50"}, {"cars_hour": 0, "date": "2026-04-21", "noise10": 62.51, "noise1h": 63.82, "peak": 87.4, "time": "16:00"}]
