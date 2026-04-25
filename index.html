@@ -952,14 +952,15 @@ function updateWeekSummary() {
         let dateObj = new Date(date);
         let isToday = date === today;
 
-        html += 
+        html += `
             <div class="day-card ${isToday ? 'today' : ''}">
                 <div class="day-name">${weekdays[dateObj.getDay()]}</div>
                 <div class="day-date">${formatDate(date)}</div>
                 <div class="day-cars">${d.cars}</div>
                 <div class="day-noise">Ø ${avgNoise} dB</div>
             </div>
-        ;
+            `;
+           
     });
 
     document.getElementById("weekSummary").innerHTML = html;
@@ -977,7 +978,7 @@ function updateHeatmap() {
         let hour = parseInt(e.time?.split(':')[0]);
         if (!date || isNaN(hour)) return;
 
-        let key = ${date}_${hour};
+        let key = `${date}_${hour}`;
         if (!heatData[key]) {
             heatData[key] = { values: [], date, hour };
         }
@@ -1036,8 +1037,8 @@ function updateL271Analyse() {
     let avgNoise = allNoise.length ? (allNoise.reduce((a,b) => a+b, 0) / allNoise.length).toFixed(1) : '--';
     let avgCars = allCars.length ? (allCars.reduce((a,b) => a+b, 0) / allCars.length).toFixed(0) : '--';
 
-    document.getElementById("avg7_noise").innerHTML = ${avgNoise} <small>dB</small>;
-    document.getElementById("avg7_cars").innerHTML = ${avgCars} <small>/h</small>;
+    document.getElementById("avg7_noise").innerHTML = `${avgNoise} <small>dB</small>`;
+    document.getElementById("avg7_cars").innerHTML = `${avgCars} <small>/h</small>`;
 
     // Grenzwertüberschreitungen
     let total = allNoise.length;
@@ -1151,7 +1152,7 @@ function exportCSV() {
 
     let csv = "Datum;Uhrzeit;Fahrzeuge/h;Lärm 10min;Lärm 1h;Peak\n";
     historyData.forEach(e => {
-        csv += ${e.date};${e.time};${e.cars_hour};${e.noise10};${e.noise1h};${e.peak}\n;
+        csv += `${e.date};${e.time};${e.cars_hour};${e.noise10};${e.noise1h};${e.peak}\n`;
     });
 
     download(csv, "traffic-data.csv", "text/csv");
