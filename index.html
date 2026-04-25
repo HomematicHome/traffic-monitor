@@ -650,7 +650,7 @@ function updatePeakStatus(data) {
     else if (p >= 65) { text = "laut"; cls = "status-warn"; }
     else { text = "normal"; cls = "status-good"; }
 
-    document.getElementById("peak_status").innerHTML = <span class="${cls}">${text}</span>;
+    document.getElementById("peak_status").innerHTML = `<span class="${cls}">${text}</span>`;
 }
 
 function updateTrafficAnalysis(data) {
@@ -685,20 +685,20 @@ function updateTrafficIndex(data) {
     else if (index < 80) { text = "stark belastet"; cls = "status-bad"; }
     else { text = "extrem belastet"; cls = "status-critical"; }
 
-    document.getElementById("traffic_index_status").innerHTML = <span class="${cls}">${text}</span>;
+    document.getElementById("traffic_index_status").innerHTML = `<span class="${cls}">${text}</span>`;
 }
 
 function updateLawCheck(data) {
     let noise = data.noise_avg_1h;
     let text, cls;
 
-    if (noise >= 70) { text = Gesundheitskritisch (${noise} dB); cls = "status-critical"; }
-    else if (noise >= 65) { text = Kritische Belastung (${noise} dB); cls = "status-bad"; }
-    else if (noise >= 59) { text = Über Neubau-Grenzwert (${noise} dB); cls = "status-bad"; }
-    else if (noise >= 53) { text = Über WHO-Empfehlung (${noise} dB); cls = "status-warn"; }
-    else { text = Unter WHO-Empfehlung (${noise} dB); cls = "status-good"; }
+    if (noise >= 70) { text = `Gesundheitskritisch (${noise} dB)`; cls = "status-critical"; }
+    else if (noise >= 65) { text = `Kritische Belastung (${noise} dB)`; cls = "status-bad"; }
+    else if (noise >= 59) { text = `Über Neubau-Grenzwert (${noise} dB)`; cls = "status-bad"; }
+    else if (noise >= 53) { text = `Über WHO-Empfehlung (${noise} dB)`; cls = "status-warn"; }
+    else { text = `Unter WHO-Empfehlung (${noise} dB)`; cls = "status-good"; }
 
-    document.getElementById("law_result").innerHTML = <span class="${cls}">${text}</span>;
+    document.getElementById("law_result").innerHTML = `<span class="${cls}">${text}</span>`;
 }
 
 // ============================================
