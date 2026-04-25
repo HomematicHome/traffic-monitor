@@ -1230,8 +1230,9 @@ function formatDate(dateStr) {
 // INITIALISIERUNG
 // ============================================
 
-loadTraffic();
-loadHistory();
+loadHistory().then(() => {
+    loadTraffic();
+});
 
 // Auto-Update alle 60 Sekunden
 setInterval(loadTraffic, 60000);
