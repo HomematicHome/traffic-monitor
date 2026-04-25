@@ -361,6 +361,7 @@ canvas {
 
                 <div class="card">Rush Hour: <strong id="rush_hour">--</strong></div>
                 <div class="card">Nachtverkehr: <strong id="night_traffic">--</strong></div>
+                <div class="card">Verkehrsereignis: <strong id="traffic_event">--</strong></div>
 
                 <div class="card">Verkehrsindex: <strong id="traffic_index">--</strong></div>
                 <div class="card">Belastung: <strong id="traffic_index_status">--</strong></div>
@@ -595,6 +596,7 @@ async function loadTraffic() {
         updateTrafficAnalysis(last);
         updateTrafficIndex(last);
         updateLawCheck(last);
+        detectTrafficEvent(last);
 
     } catch (e) {
         console.error("Fehler beim Laden:", e);
@@ -679,6 +681,32 @@ function updateTrafficAnalysis(data) {
     }
 }
 
+    function detectTrafficEvent(data) {
+
+    let cars = data.cars_hour;
+    let peak = data.peak;
+    let noise = data.noise1h;
+
+    let text = "normal";
+
+    // möglicher Raser
+    if (peak > 90 && cars < 50) {
+        text = "🏎 möglicher Raser";
+    }
+
+    // möglicher LKW
+    else if (peak > 85 && noise > 65) {
+        text = "🚛 schweres Fahrzeug";
+    }
+
+    // dichter Verkehr / Stau
+    else if (cars > 180) {
+        text = "🚗 dichter Verkehr";
+    }
+
+    document.getElementById("traffic_event").textContent = text;
+}
+    
 function updateTrafficIndex(data) {
 
     let cars = data.cars_hour;
