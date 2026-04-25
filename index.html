@@ -571,30 +571,32 @@ function showPage(page) {
 
 async function loadTraffic() {
 
-    if (!historyData || historyData.length === 0) return;
+    try {
 
-    // letzter Sensorwert
-    const last = historyData[historyData.length - 1];
+        if (!historyData || historyData.length === 0) return;
 
-    document.getElementById("cars_today").textContent = last.cars_today ?? "--";
-    document.getElementById("cars_hour").textContent = last.cars_hour ?? "--";
+        const last = historyData[historyData.length - 1];
 
-    document.getElementById("noise10").textContent = last.noise10 ?? "--";
-    document.getElementById("noise1h").textContent = last.noise1h ?? "--";
+        document.getElementById("cars_today").textContent = last.cars_today ?? "--";
+        document.getElementById("cars_hour").textContent = last.cars_hour ?? "--";
 
-    document.getElementById("peak1h").textContent = last.peak ?? "--";
-    document.getElementById("peak3s").textContent = last.peak3s ?? "--";
+        document.getElementById("noise10").textContent = last.noise10 ?? "--";
+        document.getElementById("noise1h").textContent = last.noise1h ?? "--";
 
-    document.getElementById("update_time").textContent =
-        new Date().toLocaleTimeString();
+        document.getElementById("peak1h").textContent = last.peak ?? "--";
+        document.getElementById("peak3s").textContent = last.peak3s ?? "--";
 
-    updateTrafficLight(last);
-    updateNoiseStatus(last);
-    updatePeakStatus(last);
-    updateTrafficAnalysis(last);
-    updateTrafficIndex(last);
-    updateLawCheck(last);
-} catch (e) {
+        document.getElementById("update_time").textContent =
+            new Date().toLocaleTimeString();
+
+        updateTrafficLight(last);
+        updateNoiseStatus(last);
+        updatePeakStatus(last);
+        updateTrafficAnalysis(last);
+        updateTrafficIndex(last);
+        updateLawCheck(last);
+
+    } catch (e) {
         console.error("Fehler beim Laden:", e);
     }
 }
