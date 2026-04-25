@@ -807,26 +807,15 @@ function getChartOptions(label, min, max) {
 }
 
 function updateDailyChart() {
-
     let dailyData = {};
-    let countedHours = {};
-
+    
     historyData.forEach(e => {
-
         let date = e.date || "Unbekannt";
-        let hour = e.time?.split(':')[0];
-
         if (!dailyData[date]) {
-            dailyData[date] = { cars: 0 };
-            countedHours[date] = {};
+            dailyData[date] = { cars: 0, count: 0 };
         }
-
-        // pro Stunde nur einmal zählen
-        if (!countedHours[date][hour]) {
-            dailyData[date].cars += e.cars_hour || 0;
-            countedHours[date][hour] = true;
-        }
-
+        dailyData[date].cars += e.cars_hour || 0;
+        dailyData[date].count++;
     });
 
     let labels = Object.keys(dailyData).slice(-7);
@@ -847,7 +836,6 @@ function updateDailyChart() {
         },
         options: getChartOptions("Fahrzeuge")
     });
-
 }
 
 function updateWeekChart() {
@@ -959,8 +947,7 @@ function updateWeekSummary() {
                 <div class="day-cars">${d.cars}</div>
                 <div class="day-noise">Ø ${avgNoise} dB</div>
             </div>
-            `;
-           
+        `;
     });
 
     document.getElementById("weekSummary").innerHTML = html;
@@ -989,14 +976,14 @@ function updateHeatmap() {
     
     let html = '<div class="heatmap-cell heatmap-header"></div>';
     dates.forEach(d => {
-        html += <div class="heatmap-cell heatmap-header">${formatDate(d)}</div>;
+        html += `<div class="heatmap-cell heatmap-header">${formatDate(d)}</div>`;
     });
 
     for (let hour = 0; hour < 24; hour++) {
-        html += <div class="heatmap-cell heatmap-hour">${hour.toString().padStart(2, '0')}:00</div>;
+        html += `<div class="heatmap-cell heatmap-hour">${hour.toString().padStart(2, '0')}:00</div>`;
         
         dates.forEach(date => {
-            let key = ${date}_${hour};
+            let key = `${date}_${hour}`;
             let data = heatData[key];
             let avg = '--';
             let color = '#222';
@@ -1006,7 +993,7 @@ function updateHeatmap() {
                 color = getHeatColor(parseFloat(avg));
             }
 
-            html += <div class="heatmap-cell" style="background:${color}">${avg}</div>;
+            html += `<div class="heatmap-cell" style="background:${color}">${avg}</div>`;
         });
     }
 
@@ -1047,19 +1034,19 @@ function updateL271Analyse() {
     let exceed65 = allNoise.filter(n => n > 65).length;
     let exceed70 = allNoise.filter(n => n > 70).length;
 
-    document.getElementById("exceed_who").innerHTML = ${exceedWho}/${total} <small>(${(exceedWho/total*100).toFixed(0)}%)</small>;
-    document.getElementById("exceed_59").innerHTML = ${exceed59}/${total} <small>(${(exceed59/total*100).toFixed(0)}%)</small>;
-    document.getElementById("exceed_65").innerHTML = ${exceed65}/${total} <small>(${(exceed65/total*100).toFixed(0)}%)</small>;
-    document.getElementById("exceed_70").innerHTML = ${exceed70}/${total} <small>(${(exceed70/total*100).toFixed(0)}%)</small>;
+    document.getElementById("exceed_who").innerHTML = `${exceedWho}/${total} <small>(${(exceedWho/total*100).toFixed(0)}%)</small>`;
+    document.getElementById("exceed_59").innerHTML = `${exceed59}/${total} <small>(${(exceed59/total*100).toFixed(0)}%)</small>`;
+    document.getElementById("exceed_65").innerHTML = `${exceed65}/${total} <small>(${(exceed65/total*100).toFixed(0)}%)</small>`;
+    document.getElementById("exceed_70").innerHTML = `${exceed70}/${total} <small>(${(exceed70/total*100).toFixed(0)}%)</small>`;
 
     // Spitzenzeiten
     let maxNoiseEntry = historyData.reduce((max, e) => (e.noise1h > (max?.noise1h || 0)) ? e : max, null);
     let maxCarsEntry = historyData.reduce((max, e) => (e.cars_hour > (max?.cars_hour || 0)) ? e : max, null);
     let maxPeak = allPeaks.length ? Math.max(...allPeaks) : '--';
 
-    document.getElementById("peak_hour").textContent = maxNoiseEntry ? ${maxNoiseEntry.time} (${maxNoiseEntry.noise1h} dB) : '--';
+    document.getElementById("peak_hour").textContent = maxNoiseEntry ? `${maxNoiseEntry.time} (${maxNoiseEntry.noise1h} dB)` : '--';
     document.getElementById("max_peak").textContent = maxPeak + ' dB';
-    document.getElementById("busy_hour").textContent = maxCarsEntry ? ${maxCarsEntry.time} : '--';
+    document.getElementById("busy_hour").textContent = maxCarsEntry ? `${maxCarsEntry.time}` : '--';
     document.getElementById("max_cars").textContent = maxCarsEntry ? maxCarsEntry.cars_hour : '--';
 
     // Tag/Nacht Vergleich
@@ -1122,8 +1109,8 @@ function updateL271Analyse() {
 
 function formatTrend(diff, unit) {
     if (Math.abs(diff) < 0.5) return '<span class="status-good">→ stabil</span>';
-    if (diff > 0) return <span class="status-bad">↑ +${diff.toFixed(1)} ${unit}</span>;
-    return <span class="status-good">↓ ${diff.toFixed(1)} ${unit}</span>;
+    if (diff > 0) return `<span class="status-bad">↑ +${diff.toFixed(1)} ${unit}</span>`;
+    return `<span class="status-good">↓ ${diff.toFixed(1)} ${unit}</span>`;
 }
 
 // ============================================
@@ -1137,7 +1124,7 @@ function updateExportPreview() {
         let first = historyData[0];
         let last = historyData[historyData.length - 1];
         document.getElementById("export_range").textContent = 
-            ${first.date} ${first.time} – ${last.date} ${last.time};
+            `${first.date} ${first.time} – ${last.date} ${last.time}`;
     }
 
     let preview = historyData.slice(-5);
@@ -1180,7 +1167,7 @@ function exportAnalyse() {
     let exceed59 = allNoise.filter(n => n > 59).length;
     let exceed65 = allNoise.filter(n => n > 65).length;
 
-    let report = 
+    let report = `
 L271 VERKEHRSANALYSE - VÖLKLINGEN
 =================================
 Erstellt: ${new Date().toLocaleString()}
@@ -1205,7 +1192,7 @@ ${parseFloat(avgNoise) >= 65 ? 'KRITISCH: Dauerbelastung überschreitet Sanierun
   parseFloat(avgNoise) >= 59 ? 'ERHÖHT: Neubau-Grenzwert wird überschritten.' :
   parseFloat(avgNoise) >= 53 ? 'MODERAT: WHO-Empfehlung wird überschritten.' :
   'AKZEPTABEL: Werte im Normalbereich.'}
-;
+`;
 
     download(report, "L271-Analyse.txt", "text/plain");
 }
@@ -1228,7 +1215,7 @@ function formatDate(dateStr) {
     if (!dateStr) return '--';
     let parts = dateStr.split('-');
     if (parts.length === 3) {
-        return ${parts[2]}.${parts[1]};
+        return `${parts[2]}.${parts[1]}`;
     }
     return dateStr;
 }
