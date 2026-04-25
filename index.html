@@ -701,7 +701,9 @@ function updateTrafficIndex(data) {
 }
 
 function updateLawCheck(data) {
-    let noise = data.noise_avg_1h;
+
+    let noise = data.noise1h;
+
     let text, cls;
 
     if (noise >= 70) { text = `Gesundheitskritisch (${noise} dB)`; cls = "status-critical"; }
@@ -710,7 +712,8 @@ function updateLawCheck(data) {
     else if (noise >= 53) { text = `Über WHO-Empfehlung (${noise} dB)`; cls = "status-warn"; }
     else { text = `Unter WHO-Empfehlung (${noise} dB)`; cls = "status-good"; }
 
-    document.getElementById("law_result").innerHTML = `<span class="${cls}">${text}</span>`;
+    document.getElementById("law_result").innerHTML =
+        `<span class="${cls}">${text}</span>`;
 }
 
 // ============================================
