@@ -820,7 +820,7 @@ function updateDailyChart() {
         if (!dailyData[date]) {
             dailyData[date] = { cars: 0, count: 0 };
         }
-        dailyData[date].cars += e.cars_hour || 0;
+        dailyData[date].cars = e.cars_today || 0;
         dailyData[date].count++;
     });
 
@@ -852,7 +852,7 @@ function updateWeekChart() {
         if (!dailyData[date]) {
             dailyData[date] = { cars: 0, noise: [], peaks: [] };
         }
-        dailyData[date].cars += e.cars_hour || 0;
+        dailyData[date].cars = e.cars_today || 0;
         if (e.noise1h) dailyData[date].noise.push(e.noise1h);
         if (e.peak) dailyData[date].peaks.push(e.peak);
     });
