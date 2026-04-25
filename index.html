@@ -807,15 +807,26 @@ function getChartOptions(label, min, max) {
 }
 
 function updateDailyChart() {
+
     let dailyData = {};
-    
+    let countedHours = {};
+
     historyData.forEach(e => {
+
         let date = e.date || "Unbekannt";
+        let hour = e.time?.split(':')[0];
+
         if (!dailyData[date]) {
-            dailyData[date] = { cars: 0, count: 0 };
+            dailyData[date] = { cars: 0 };
+            countedHours[date] = {};
         }
-        dailyData[date].cars += e.cars_hour || 0;
-        dailyData[date].count++;
+
+        // pro Stunde nur einmal zählen
+        if (!countedHours[date][hour]) {
+            dailyData[date].cars += e.cars_hour || 0;
+            countedHours[date][hour] = true;
+        }
+
     });
 
     let labels = Object.keys(dailyData).slice(-7);
@@ -836,6 +847,7 @@ function updateDailyChart() {
         },
         options: getChartOptions("Fahrzeuge")
     });
+
 }
 
 function updateWeekChart() {
