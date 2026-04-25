@@ -1060,9 +1060,17 @@ function updateL271Analyse() {
     if (historyData.length === 0) return;
 
     // Durchschnittswerte
-    let allNoise = historyData.filter(e => e.noise1h).map(e => e.noise1h);
-    let allCars = historyData.filter(e => e.cars_hour !== undefined).map(e => e.cars_hour);
-    let allPeaks = historyData.filter(e => e.peak).map(e => e.peak);
+    let allNoise = historyData
+    .filter(e => e.noise1h !== undefined)
+    .map(e => Number(e.noise1h));
+
+    let allCars = historyData
+    .filter(e => e.cars_hour !== undefined)
+    .map(e => Number(e.cars_hour));
+
+    let allPeaks = historyData
+    .filter(e => e.peak !== undefined)
+    .map(e => Number(e.peak));
 
     let avgNoise = allNoise.length ? (allNoise.reduce((a,b) => a+b, 0) / allNoise.length).toFixed(1) : '--';
     let avgCars = allCars.length ? (allCars.reduce((a,b) => a+b, 0) / allCars.length).toFixed(0) : '--';
@@ -1072,10 +1080,10 @@ function updateL271Analyse() {
 
     // Grenzwertüberschreitungen
     let total = allNoise.length;
-    let exceedWho = allNoise.filter(n => n > 53).length;
-    let exceed59 = allNoise.filter(n => n > 59).length;
-    let exceed65 = allNoise.filter(n => n > 65).length;
-    let exceed70 = allNoise.filter(n => n > 70).length;
+    let exceedWho = allNoise.filter(n => n >= 53).length;
+    let exceed59 = allNoise.filter(n => n >= 59).length;
+    let exceed65 = allNoise.filter(n => n >= 65).length;
+    let exceed70 = allNoise.filter(n => n >= 70).length;
 
     document.getElementById("exceed_who").innerHTML = `${exceedWho}/${total} <small>(${(exceedWho/total*100).toFixed(0)}%)</small>`;
     document.getElementById("exceed_59").innerHTML = `${exceed59}/${total} <small>(${(exceed59/total*100).toFixed(0)}%)</small>`;
