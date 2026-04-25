@@ -626,7 +626,9 @@ async function loadHistory() {
 // ============================================
 
 function updateTrafficLight(data) {
-    let noise = data.noise_avg_1h;
+
+    let noise = data.noise1h;
+
     document.querySelectorAll(".light").forEach(l => {
         l.classList.remove("red", "orange", "yellow", "green");
     });
@@ -635,10 +637,11 @@ function updateTrafficLight(data) {
     else if (noise >= 59) document.getElementById("light_orange").classList.add("orange");
     else if (noise >= 53) document.getElementById("light_yellow").classList.add("yellow");
     else document.getElementById("light_green").classList.add("green");
+
 }
 
 function updateNoiseStatus(data) {
-    let n = data.noise_avg_1h;
+    let n = data.noise1h;;
     let text, cls;
 
     if (n >= 65) { text = "gesundheitsschädlich"; cls = "status-critical"; }
@@ -650,7 +653,7 @@ function updateNoiseStatus(data) {
 }
 
 function updatePeakStatus(data) {
-    let p = data.noise_peak_1h;
+    let p = data.peak;
     let text, cls;
 
     if (p >= 85) { text = "extrem laut"; cls = "status-critical"; }
