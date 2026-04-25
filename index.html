@@ -677,9 +677,10 @@ function updateTrafficAnalysis(data) {
 }
 
 function updateTrafficIndex(data) {
+
     let cars = data.cars_hour;
-    let noise = data.noise_avg_1h;
-    let peak = data.noise_peak_1h;
+    let noise = data.noise1h;
+    let peak = data.peak;
 
     let index = (cars * 1.2) + (noise - 40) * 1.8 + (peak - 60) * 0.8;
     index = Math.max(0, Math.min(100, index));
