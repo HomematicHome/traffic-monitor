@@ -638,7 +638,7 @@ function updateNoiseStatus(data) {
     else if (n >= 53) { text = "erhöht"; cls = "status-warn"; }
     else { text = "ruhig"; cls = "status-good"; }
 
-    document.getElementById("noise_status").innerHTML = <span class="${cls}">${text}</span>;
+    document.getElementById("noise_status").innerHTML = `<span class="${cls}">${text}</span>`;
 }
 
 function updatePeakStatus(data) {
