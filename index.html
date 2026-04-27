@@ -652,14 +652,12 @@ async function loadTraffic() {
         if (!historyData || historyData.length === 0) return;
 
         const last = historyData[historyData.length - 1];
-        let peak3s = Number(last.peak3s) || 0;
         let noise10 = Number(last.noise10) || 0;
         let noise1h = Number(last.noise1h) || 0;
 
         let noiseWeighted =
-        (peak3s * 0.1) +
         (noise10 * 0.4) +
-        (noise1h * 0.5);
+        (noise1h * 0.6);
 
         last.noiseWeighted = noiseWeighted;
 
@@ -1142,14 +1140,12 @@ function updateHeatmap() {
             };
         }
 
-        let peak3s = Number(e.peak3s) || 0;
         let noise10 = Number(e.noise10) || 0;
         let noise1h = Number(e.noise1h) || 0;
 
         let noiseWeighted =
-        (peak3s * 0.1) +
         (noise10 * 0.4) +
-        (noise1h * 0.5);
+        (noise1h * 0.6);
 
         heatData[key].sum += noiseWeighted;
         heatData[key].count++;
@@ -1211,7 +1207,7 @@ function updateL271Analyse() {
     .map(e => {
         let noise10 = Number(e.noise10) || 0;
         let noise1h = Number(e.noise1h) || 0;
-        return (noise10 * 0.6) + (noise1h * 0.4);
+        return (noise10 * 0.4) + (noise1h * 0.6);
     });
 
     let allCars = historyData
