@@ -677,6 +677,10 @@ async function loadTraffic() {
         updateNoiseStatus(last);
         updatePeakStatus(last);
         updateTrafficAnalysis(last);
+        // Verkehrsphase anzeigen
+        document.getElementById("rush_hour").textContent = detectTrafficPhase();
+
+        updateTrafficIndex(last);
         updateTrafficIndex(last);
         updateLawCheck(last);
         detectTrafficEvent(last);
@@ -783,7 +787,33 @@ function updateTrafficAnalysis(data) {
         document.getElementById("night_traffic").textContent = "Tagbetrieb";
     }
 }
+// ============================================
+// VERKEHRSPHASE ERKENNEN
+// ============================================
 
+function detectTrafficPhase() {
+
+    let now = new Date();
+    let hour = now.getHours();
+    let day = now.getDay(); // 0 = Sonntag
+
+    // Wochenende
+    if (day === 0 || day === 6) {
+
+        if (hour >= 10 && hour <= 18) return "🚗 Wochenendverkehr";
+        if (hour >= 22 || hour <= 5) return "🌙 ruhige Nacht";
+
+        return "🙂 moderater Verkehr";
+    }
+
+    // Werktage
+    if (hour >= 6 && hour <= 9) return "🌅 Morgenverkehr";
+    if (hour >= 16 && hour <= 19) return "🌆 Abendverkehr";
+    if (hour >= 22 || hour <= 5) return "🌙 Nachtverkehr";
+
+    return "🚗 normaler Tagesverkehr";
+}
+    
     function detectTrafficEvent(data) {
 
     let cars = data.cars_hour;
