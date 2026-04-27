@@ -627,6 +627,8 @@ let charts = {
 let historyData = [];
 let currentTraffic = {};
 
+let dailyRange = 7;
+
 // ============================================
 // NAVIGATION
 // ============================================
@@ -939,6 +941,11 @@ function getChartOptions(label, min, max) {
     };
 }
 
+function setDailyRange(days) {
+    dailyRange = days;
+    updateDailyChart();
+}
+    
 function updateDailyChart() {
 
     let dailyData = {};
