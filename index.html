@@ -374,6 +374,7 @@ canvas {
                 <div class="lawbox">
                     WHO Empfehlung: <strong>53 dB</strong><br>
                     Grenzwert Neubau: <strong>59 dB</strong><br>
+                    Dauerhafter Verkehrslärmpegel, erhöhte Belastung: <strong>60 dB</strong><br>
                     Kritische Belastung: <strong>65 dB</strong><br>
                     Lärmsanierung Bestand: <strong>67 dB</strong><br>
                     Gesundheitskritisch: <strong>70 dB</strong><br><br>
@@ -701,7 +702,7 @@ function updateTrafficLight(data) {
         l.classList.remove("red", "orange", "yellow", "green");
     });
 
-    if (noise >= 65) document.getElementById("light_red").classList.add("red");
+    if (noise >= 60) document.getElementById("light_red").classList.add("red");
     else if (noise >= 59) document.getElementById("light_orange").classList.add("orange");
     else if (noise >= 53) document.getElementById("light_yellow").classList.add("yellow");
     else document.getElementById("light_green").classList.add("green");
@@ -712,7 +713,7 @@ function updateNoiseStatus(data) {
     let n = data.noise1h;;
     let text, cls;
 
-    if (n >= 65) { text = "gesundheitsschädlich"; cls = "status-critical"; }
+    if (n >= 60) { text = "gesundheitsschädlich"; cls = "status-critical"; }
     else if (n >= 59) { text = "kritisch"; cls = "status-bad"; }
     else if (n >= 53) { text = "erhöht"; cls = "status-warn"; }
     else { text = "ruhig"; cls = "status-good"; }
