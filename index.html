@@ -788,7 +788,7 @@ function updateTrafficAnalysis(data) {
 
     let cars = data.cars_hour;
     let peak = data.peak;
-    let noise = data.noise1h;
+    let noise = data.noiseWeighted ?? data.noise1h;
 
     // Stau prüfen 
     let jam = detectTrafficJam(data);
