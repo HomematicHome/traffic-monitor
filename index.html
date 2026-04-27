@@ -944,7 +944,7 @@ function updateDailyChart() {
         dailyData[date].count++;
     });
 
-    let labels = Object.keys(dailyData).slice(-7);
+    let labels = Object.keys(dailyData).slice(-30);
     let values = labels.map(d => dailyData[d].cars);
 
     destroyChart('daily');
