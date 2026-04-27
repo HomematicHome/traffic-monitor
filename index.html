@@ -832,7 +832,14 @@ function updateCharts() {
 
     let labels = historyData.map(e => e.time);
     let cars = historyData.map(e => e.cars_hour || 0);
-    let noise = historyData.map(e => e.noise1h || 0);
+    let noise = historyData.map(e => {
+
+    let noise10 = Number(e.noise10) || 0;
+    let noise1h = Number(e.noise1h) || 0;
+
+    return (noise10 * 0.6) + (noise1h * 0.4);
+
+});
     let peaks = historyData.map(e => e.peak || 0);
 
     // Traffic Chart
