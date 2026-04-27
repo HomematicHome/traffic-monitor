@@ -413,6 +413,13 @@ canvas {
     <!-- DAILY -->
     <div id="daily" class="page">
         <h1>Autos täglich</h1>
+
+        <div style="margin-bottom:15px;">
+            <button class="export-btn" onclick="setDailyRange(7)">7 Tage</button>
+            <button class="export-btn" onclick="setDailyRange(30)">30 Tage</button>
+            <button class="export-btn" onclick="setDailyRange(9999)">Alle</button>
+        </div>
+
         <div class="chart-container">
             <canvas id="dailyChart"></canvas>
         </div>
