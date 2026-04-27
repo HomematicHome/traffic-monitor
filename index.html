@@ -710,6 +710,26 @@ async function loadHistory() {
 // DASHBOARD FUNKTIONEN
 // ============================================
 
+// STAU ERKENNUNG
+function detectTrafficJam(data) {
+
+    let cars = data.cars_hour || 0;
+    let peak = data.peak || 0;
+    let noise = data.noiseWeighted ?? data.noise1h;
+
+    let peakDiff = peak - noise;
+
+    if (cars > 120 && peakDiff < 10) {
+        return "🚗 Stau / Stop-and-Go";
+    }
+
+    if (cars > 80 && peakDiff < 20) {
+        return "🚙 dichter Verkehr";
+    }
+
+    return null;
+}
+    
 function updateTrafficLight(data) {
 
     let noise = data.noiseWeighted ?? data.noise1h;
@@ -769,6 +789,13 @@ function updateTrafficAnalysis(data) {
     let cars = data.cars_hour;
     let peak = data.peak;
     let noise = data.noise1h;
+
+    // Stau prüfen 
+    let jam = detectTrafficJam(data);
+    if (jam) {
+    document.getElementById("traffic_event").textContent = jam;
+    return;
+    }
 
     let text = "normal";
 
