@@ -1297,8 +1297,13 @@ function updateL271Analyse() {
      // vorherige 24h
      let older = historyData.slice(-288, -144);
 
-    let olderNoise = older.filter(e => e.noise1h).map(e => e.noise1h);
-    let newerNoise = newer.filter(e => e.noise1h).map(e => e.noise1h);
+    let olderNoise = older.map(e =>
+    (Number(e.noise10||0)*0.4)+(Number(e.noise1h||0)*0.6)
+    );
+
+    let newerNoise = newer.map(e =>
+    (Number(e.noise10||0)*0.4)+(Number(e.noise1h||0)*0.6)
+    );
     let olderCars = older.filter(e => e.cars_hour !== undefined).map(e => e.cars_hour);
     let newerCars = newer.filter(e => e.cars_hour !== undefined).map(e => e.cars_hour);
 
