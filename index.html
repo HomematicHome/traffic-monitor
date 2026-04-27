@@ -643,6 +643,12 @@ async function loadTraffic() {
         if (!historyData || historyData.length === 0) return;
 
         const last = historyData[historyData.length - 1];
+        let noise10 = Number(last.noise10) || 0;
+        let noise1h = Number(last.noise1h) || 0;
+
+        let noiseWeighted = (noise10 * 0.7) + (noise1h * 0.3);
+
+        last.noiseWeighted = noiseWeighted;
 
         document.getElementById("cars_today").textContent = last.cars_today ?? "--";
         document.getElementById("cars_hour").textContent = last.cars_hour ?? "--";
@@ -695,7 +701,7 @@ async function loadHistory() {
 
 function updateTrafficLight(data) {
 
-    let noise = data.noise1h;
+    let noise = data.noiseWeighted ?? data.noise1h;
 
     document.querySelectorAll(".light").forEach(l => {
         l.classList.remove("red", "orange", "yellow", "green");
@@ -709,7 +715,7 @@ function updateTrafficLight(data) {
 }
 
 function updateNoiseStatus(data) {
-    let n = data.noise1h;;
+    let n = data.noiseWeighted ?? data.noise1h;
     let text, cls;
 
     if (n >= 65) { text = "gesundheitsschädlich"; cls = "status-critical"; }
@@ -776,7 +782,7 @@ function updateTrafficAnalysis(data) {
 function updateTrafficIndex(data) {
 
     let cars = data.cars_hour;
-    let noise = data.noise1h;
+    let noise = data.noiseWeighted ?? data.noise1h;
     let peak = data.peak;
 
     let index = (cars * 1.2) + (noise - 40) * 1.8 + (peak - 60) * 0.8;
@@ -796,7 +802,7 @@ function updateTrafficIndex(data) {
 
 function updateLawCheck(data) {
 
-    let noise = data.noise1h;
+    let noise = data.noiseWeighted ?? data.noise1h;
 
     let text, cls;
 
