@@ -656,8 +656,8 @@ async function loadTraffic() {
         let noise1h = Number(last.noise1h) || 0;
 
         let noiseWeighted =
-        (noise10 * 0.4) +
-        (noise1h * 0.6);
+        (noise10 * 0.3) +
+        (noise1h * 0.7);
 
         last.noiseWeighted = noiseWeighted;
 
@@ -875,7 +875,7 @@ function updateCharts() {
     let noise10 = Number(e.noise10) || 0;
     let noise1h = Number(e.noise1h) || 0;
 
-    return (noise10 * 0.4) + (noise1h * 0.6);
+    return (noise10 * 0.3) + (noise1h * 0.7);
 
 });
     let peaks = historyData.map(e => e.peak || 0);
@@ -1171,8 +1171,8 @@ function updateHeatmap() {
         let noise1h = Number(e.noise1h) || 0;
 
         let noiseWeighted =
-        (noise10 * 0.4) +
-        (noise1h * 0.6);
+        (noise10 * 0.3) +
+        (noise1h * 0.7);
 
         heatData[key].sum += noiseWeighted;
         heatData[key].count++;
@@ -1234,7 +1234,7 @@ function updateL271Analyse() {
     .map(e => {
         let noise10 = Number(e.noise10) || 0;
         let noise1h = Number(e.noise1h) || 0;
-        return (noise10 * 0.4) + (noise1h * 0.6);
+        return (noise10 * 0.3) + (noise1h * 0.7);
     });
 
     let allCars = historyData
@@ -1266,8 +1266,8 @@ function updateL271Analyse() {
     // Spitzenzeiten
     let maxNoiseEntry = historyData.reduce((max, e) => {
 
-    let noise = (Number(e.noise10 || 0) * 0.4) + (Number(e.noise1h || 0) * 0.6);
-    let maxNoise = (Number(max?.noise10 || 0) * 0.4) + (Number(max?.noise1h || 0) * 0.6);
+    let noise = (Number(e.noise10 || 0) * 0.3) + (Number(e.noise1h || 0) * 0.7);
+    let maxNoise = (Number(max?.noise10 || 0) * 0.3) + (Number(max?.noise1h || 0) * 0.7);
 
     return noise > maxNoise ? e : max;
 
@@ -1290,8 +1290,8 @@ function updateL271Analyse() {
         return h < 6 || h >= 22;
     });
 
-    let dayNoise = dayData.map(e => (Number(e.noise10||0)*0.4)+(Number(e.noise1h||0)*0.6));
-    let nightNoise = nightData.map(e => (Number(e.noise10||0)*0.4)+(Number(e.noise1h||0)*0.6));
+    let dayNoise = dayData.map(e => (Number(e.noise10||0)*0.3)+(Number(e.noise1h||0)*0.7));
+    let nightNoise = nightData.map(e => (Number(e.noise10||0)*0.3)+(Number(e.noise1h||0)*0.7));
     let dayCars = dayData.filter(e => e.cars_hour !== undefined).map(e => e.cars_hour);
     let nightCars = nightData.filter(e => e.cars_hour !== undefined).map(e => e.cars_hour);
 
@@ -1321,15 +1321,15 @@ function updateL271Analyse() {
     if (historyData.length < 288) return;
     let newer = historyData.slice(-144);
 
-     // vorherige 24h
-     let older = historyData.slice(-288, -144);
+    // vorherige 24h
+    let older = historyData.slice(-288, -144);
 
     let olderNoise = older.map(e =>
-    (Number(e.noise10||0)*0.4)+(Number(e.noise1h||0)*0.6)
+    (Number(e.noise10||0)*0.3)+(Number(e.noise1h||0)*0.7)
     );
 
     let newerNoise = newer.map(e =>
-    (Number(e.noise10||0)*0.4)+(Number(e.noise1h||0)*0.6)
+    (Number(e.noise10||0)*0.3)+(Number(e.noise1h||0)*0.7)
     );
     let olderCars = older.filter(e => e.cars_hour !== undefined).map(e => e.cars_hour);
     let newerCars = newer.filter(e => e.cars_hour !== undefined).map(e => e.cars_hour);
