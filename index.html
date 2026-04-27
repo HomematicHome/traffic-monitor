@@ -1063,50 +1063,68 @@ function updateWeekSummary() {
 }
 
 // ============================================
-// HEATMAP (24h × 7 Tage)
+// HEATMAP (7 Tage Durschnitt)
 // ============================================
 
 function updateHeatmap() {
-    let heatData = {};
-    
-    historyData.forEach(e => {
-        let date = e.date;
-        let hour = parseInt(e.time?.split(':')[0]);
-        if (!date || isNaN(hour)) return;
 
-        let key = `${date}_${hour}`;
+    const weekdays = ['Mo','Di','Mi','Do','Fr','Sa','So'];
+
+    let heatData = {};
+
+    historyData.forEach(e => {
+
+        if (!e.date || !e.time || !e.noise1h) return;
+
+        let date = new Date(e.date);
+        let weekday = (date.getDay() + 6) % 7; // Montag=0
+        let hour = parseInt(e.time.split(':')[0]);
+
+        let key = `${weekday}_${hour}`;
+
         if (!heatData[key]) {
-            heatData[key] = { values: [], date, hour };
+            heatData[key] = {
+                sum: 0,
+                count: 0
+            };
         }
-        if (e.noise1h) heatData[key].values.push(e.noise1h);
+
+        heatData[key].sum += Number(e.noise1h);
+        heatData[key].count++;
+
     });
 
-    let dates = [...new Set(historyData.map(e => e.date).filter(Boolean))].sort().slice(-7);
-    
     let html = '<div class="heatmap-cell heatmap-header"></div>';
-    dates.forEach(d => {
-        html += `<div class="heatmap-cell heatmap-header">${formatDate(d)}</div>`;
+
+    weekdays.forEach(w => {
+        html += `<div class="heatmap-cell heatmap-header">${w}</div>`;
     });
 
     for (let hour = 0; hour < 24; hour++) {
-        html += `<div class="heatmap-cell heatmap-hour">${hour.toString().padStart(2, '0')}:00</div>`;
-        
-        dates.forEach(date => {
-            let key = `${date}_${hour}`;
-            let data = heatData[key];
+
+        html += `<div class="heatmap-cell heatmap-hour">${hour.toString().padStart(2,'0')}:00</div>`;
+
+        for (let weekday = 0; weekday < 7; weekday++) {
+
+            let key = `${weekday}_${hour}`;
             let avg = '--';
             let color = '#222';
 
-            if (data && data.values.length) {
-                avg = (data.values.reduce((a,b) => a+b, 0) / data.values.length).toFixed(0);
+            if (heatData[key]) {
+
+                avg = (heatData[key].sum / heatData[key].count).toFixed(0);
                 color = getHeatColor(parseFloat(avg));
+
             }
 
             html += `<div class="heatmap-cell" style="background:${color}">${avg}</div>`;
-        });
+
+        }
+
     }
 
     document.getElementById("heatmapGrid").innerHTML = html;
+
 }
 
 function getHeatColor(db) {
