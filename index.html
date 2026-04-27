@@ -681,7 +681,6 @@ async function loadTraffic() {
         document.getElementById("rush_hour").textContent = detectTrafficPhase();
 
         updateTrafficIndex(last);
-        updateTrafficIndex(last);
         updateLawCheck(last);
         detectTrafficEvent(last);
 
@@ -777,12 +776,9 @@ function updateTrafficAnalysis(data) {
     let cars = data.cars_hour;
     let hour = new Date().getHours();
 
-    if (cars > 40) document.getElementById("rush_hour").textContent = "hoch";
-    else if (cars > 20) document.getElementById("rush_hour").textContent = "mittel";
-    else document.getElementById("rush_hour").textContent = "gering";
-
     if (hour >= 22 || hour <= 5) {
-        document.getElementById("night_traffic").textContent = cars > 10 ? "ungewöhnlich hoch" : "normal";
+        document.getElementById("night_traffic").textContent =
+            cars > 10 ? "ungewöhnlich hoch" : "normal";
     } else {
         document.getElementById("night_traffic").textContent = "Tagbetrieb";
     }
