@@ -643,10 +643,14 @@ async function loadTraffic() {
         if (!historyData || historyData.length === 0) return;
 
         const last = historyData[historyData.length - 1];
+        let peak3s = Number(last.peak3s) || 0;
         let noise10 = Number(last.noise10) || 0;
         let noise1h = Number(last.noise1h) || 0;
 
-        let noiseWeighted = (noise10 * 0.6) + (noise1h * 0.4);
+        let noiseWeighted =
+        (peak3s * 0.1) +
+        (noise10 * 0.4) +
+        (noise1h * 0.5);
 
         last.noiseWeighted = noiseWeighted;
 
