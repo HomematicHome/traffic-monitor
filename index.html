@@ -940,35 +940,57 @@ function getChartOptions(label, min, max) {
 }
 
 function updateDailyChart() {
+
     let dailyData = {};
-    
+
     historyData.forEach(e => {
+
         let date = e.date || "Unbekannt";
+
         if (!dailyData[date]) {
-            dailyData[date] = { cars: 0, count: 0 };
+            dailyData[date] = {
+                cars: 0,
+                count: 0
+            };
         }
+
         dailyData[date].cars = e.cars_today || 0;
         dailyData[date].count++;
+
     });
 
-    let labels = Object.keys(dailyData).slice(-30);
+    let labels = Object.keys(dailyData);
+
+    labels.sort();
+
+    if (dailyRange !== 9999) {
+        labels = labels.slice(-dailyRange);
+    }
+
     let values = labels.map(d => dailyData[d].cars);
 
     destroyChart('daily');
+
     charts.daily = new Chart(document.getElementById("dailyChart"), {
+
         type: "bar",
+
         data: {
             labels: labels.map(d => formatDate(d)),
+
             datasets: [{
                 label: "Fahrzeuge gesamt",
                 data: values,
-                backgroundColor: "rgba(0, 255, 0, 0.6)",
+                backgroundColor: "rgba(0,255,0,0.6)",
                 borderColor: "#00ff00",
                 borderWidth: 2
             }]
         },
+
         options: getChartOptions("Fahrzeuge")
+
     });
+
 }
 
 function updateWeekChart() {
