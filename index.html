@@ -1102,10 +1102,14 @@ function updateHeatmap() {
             };
         }
 
+        let peak3s = Number(e.peak3s) || 0;
         let noise10 = Number(e.noise10) || 0;
         let noise1h = Number(e.noise1h) || 0;
 
-        let noiseWeighted = (noise10 * 0.7) + (noise1h * 0.3);
+        let noiseWeighted =
+        (peak3s * 0.1) +
+        (noise10 * 0.4) +
+        (noise1h * 0.5);
 
         heatData[key].sum += noiseWeighted;
         heatData[key].count++;
