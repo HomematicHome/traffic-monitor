@@ -1299,7 +1299,8 @@ function updateL271Analyse() {
     let maxCarsEntry = historyData.reduce((max, e) => (e.cars_hour > (max?.cars_hour || 0)) ? e : max, null);
     let maxPeak = allPeaks.length ? Math.max(...allPeaks) : '--';
 
-    document.getElementById("peak_hour").textContent = maxNoiseEntry ? `${maxNoiseEntry.time} (${maxNoiseEntry.noise1h} dB)` : '--';
+    document.getElementById("peak_hour").textContent =
+    maxNoiseEntry ? `${maxNoiseEntry.time} (${calculateNoise(maxNoiseEntry).toFixed(1)} dB)` : '--';
     document.getElementById("max_peak").textContent = maxPeak + ' dB';
     document.getElementById("busy_hour").textContent = maxCarsEntry ? `${maxCarsEntry.time}` : '--';
     document.getElementById("max_cars").textContent = maxCarsEntry ? maxCarsEntry.cars_hour : '--';
