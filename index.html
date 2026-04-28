@@ -850,19 +850,40 @@ function detectTrafficJam(data) {
     return null;
 }
     
+// ============================================
+// BELASTUNGS-AMPEL
+// ============================================
+
 function updateTrafficLight(data) {
 
-    let noise = data.noiseWeighted ?? data.noise1h;
+    let cars = data.cars_hour || 0;
+    let noise = data.noiseWeighted ?? data.noise1h ?? 0;
+    let peak = data.peak || 0;
+
+    let index =
+        (cars * 1.2) +
+        (noise - 40) * 1.8 +
+        (peak - 60) * 0.8;
+
+    index = Math.max(0, Math.min(100, index));
 
     document.querySelectorAll(".light").forEach(l => {
         l.classList.remove("red", "orange", "yellow", "green");
     });
 
-    if (noise >= 65) document.getElementById("light_red").classList.add("red");
-    else if (noise >= 59) document.getElementById("light_orange").classList.add("orange");
-    else if (noise >= 53) document.getElementById("light_yellow").classList.add("yellow");
-    else document.getElementById("light_green").classList.add("green");
-
+    // Skala
+    if (index >= 85) {
+        document.getElementById("light_red").classList.add("red");
+    }
+    else if (index >= 70) {
+        document.getElementById("light_orange").classList.add("orange");
+    }
+    else if (index >= 50) {
+        document.getElementById("light_yellow").classList.add("yellow");
+    }
+    else {
+        document.getElementById("light_green").classList.add("green");
+    }
 }
 
 function updateNoiseStatus(data) {
