@@ -639,10 +639,13 @@ function calculateNoise(data) {
     const noise1h = Number(data.noise1h) || 0;
     const peak = Number(data.peak) || 0;
 
-    // HIER später Gewichtung ändern
-    return (noise10 * 0.20) +
-           (noise1h * 0.75) +
-           (peak * 0.05);
+    return Math.round(
+        (
+            (noise10 * 0.20) +
+            (noise1h * 0.75) +
+            (peak * 0.05)
+        ) * 10
+    ) / 10;
 }
 // ============================================
 // NAVIGATION
