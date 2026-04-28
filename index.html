@@ -358,6 +358,7 @@ canvas {
                 <div class="card">⚡ Peak 3 s: <strong id="peak3s">--</strong> dB</div>
 
                 <div class="card">EU Lärmindex (Lden): <strong id="lden_value">--</strong></div>
+                <div class="card">WHO Bewertung: <strong id="lden_status">--</strong></div>
 
                 <div class="card">Lärmstatus: <strong id="noise_status">--</strong></div>
                 <div class="card">Spitzenlärm: <strong id="peak_status">--</strong></div>
@@ -1328,6 +1329,35 @@ function updateL271Analyse() {
     let lden = calculateLden(historyData);
 
     document.getElementById("lden_value").textContent = lden + " dB";
+    let statusText = "--";
+    let statusClass = "";
+
+    if (lden !== null) {
+
+        let v = parseFloat(lden);
+
+        if (v < 53) {
+            statusText = "gut";
+            statusClass = "status-good";
+        }
+        else if (v < 59) {
+            statusText = "erhöht";
+            statusClass = "status-warn";
+        }
+        else if (v < 65) {
+            statusText = "kritisch";
+            statusClass = "status-bad";
+        }
+        else {
+            statusText = "gesundheitskritisch";
+            statusClass = "status-critical";
+        }
+
+}
+
+document.getElementById("lden_status").innerHTML =
+    `<span class="${statusClass}">${statusText}</span>`;
+    
     
     // Grenzwertüberschreitungen
     let total = allNoise.length;
