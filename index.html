@@ -750,14 +750,25 @@ function calculateLden(dataArray) {
 
     });
 
-    let all = [...day, ...evening, ...night];
+    if (day.length === 0 && evening.length === 0 && night.length === 0) return null;
 
-    if (all.length === 0) return null;
+    let dayEnergy =
+        day.reduce((s,n)=>s+Math.pow(10,n/10),0) / Math.max(day.length,1);
 
-    let energySum = all.reduce((sum, n) => sum + Math.pow(10, n / 10), 0);
+    let eveningEnergy =
+        evening.reduce((s,n)=>s+Math.pow(10,n/10),0) / Math.max(evening.length,1);
 
-    return (10 * Math.log10(energySum / all.length)).toFixed(1);
-}   
+    let nightEnergy =
+        night.reduce((s,n)=>s+Math.pow(10,n/10),0) / Math.max(night.length,1);
+
+    let lden = 10 * Math.log10(
+        (12 * dayEnergy +
+         4 * eveningEnergy +
+         8 * nightEnergy) / 24
+    );
+
+    return lden.toFixed(1);
+}
 // ============================================
 // DASHBOARD FUNKTIONEN
 // ============================================
