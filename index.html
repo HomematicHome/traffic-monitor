@@ -908,8 +908,6 @@ function updateCharts() {
     let labels = historyData.map(e => e.time);
     let cars = historyData.map(e => e.cars_hour || 0);
     let noise = historyData.map(e => calculateNoise(e));
-
-});
     let peaks = historyData.map(e => e.peak || 0);
 
     // Traffic Chart
@@ -1259,7 +1257,7 @@ function updateL271Analyse() {
     let allNoise = historyData
     .filter(e => e.noise10 !== undefined && e.noise1h !== undefined)
     .map(e => calculateNoise(e));
-    });
+    
 
     let allCars = historyData
     .filter(e => e.cars_hour !== undefined)
@@ -1290,8 +1288,8 @@ function updateL271Analyse() {
     // Spitzenzeiten
     let maxNoiseEntry = historyData.reduce((max, e) => {
 
-    let noise = (Number(e.noise10 || 0) * 0.3) + (Number(e.noise1h || 0) * 0.7);
-    let maxNoise = (Number(max?.noise10 || 0) * 0.3) + (Number(max?.noise1h || 0) * 0.7);
+    let noise = calculateNoise(e);
+    let maxNoise = calculateNoise(max || {});
 
     return noise > maxNoise ? e : max;
 
@@ -1314,8 +1312,8 @@ function updateL271Analyse() {
         return h < 6 || h >= 22;
     });
 
-    let dayNoise = dayData.map(e => (Number(e.noise10||0)*0.3)+(Number(e.noise1h||0)*0.7));
-    let nightNoise = nightData.map(e => (Number(e.noise10||0)*0.3)+(Number(e.noise1h||0)*0.7));
+    let dayNoise = dayData.map(e => calculateNoise(e));
+    let nightNoise = nightData.map(e => calculateNoise(e));
     let dayCars = dayData.filter(e => e.cars_hour !== undefined).map(e => e.cars_hour);
     let nightCars = nightData.filter(e => e.cars_hour !== undefined).map(e => e.cars_hour);
 
@@ -1348,13 +1346,9 @@ function updateL271Analyse() {
     // vorherige 24h
     let older = historyData.slice(-288, -144);
 
-    let olderNoise = older.map(e =>
-    (Number(e.noise10||0)*0.3)+(Number(e.noise1h||0)*0.7)
-    );
-
-    let newerNoise = newer.map(e =>
-    (Number(e.noise10||0)*0.3)+(Number(e.noise1h||0)*0.7)
-    );
+    let olderNoise = older.map(e => calculateNoise(e));
+    let newerNoise = newer.map(e => calculateNoise(e));
+    
     let olderCars = older.filter(e => e.cars_hour !== undefined).map(e => e.cars_hour);
     let newerCars = newer.filter(e => e.cars_hour !== undefined).map(e => e.cars_hour);
 
