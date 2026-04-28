@@ -330,6 +330,7 @@ canvas {
     <button onclick="showPage('noise')">Lärm Verlauf</button>
     <button onclick="showPage('peak')">Peak Verlauf</button>
     <button onclick="showPage('heatmap')">Lärm Heatmap</button>
+    <button onclick="showPage('heatmap_lden')">Heatmap EU Lden</button>
     <button onclick="showPage('analyse')">L271 Analyse</button>
     <button onclick="showPage('export')">Daten Export</button>
     <button onclick="showPage('map')">Messstrecke</button>
@@ -458,7 +459,38 @@ canvas {
             <div class="legend-item"><div class="legend-color" style="background:#ff0000"></div> &gt;65 dB (kritisch)</div>
         </div>
     </div>
+    <!-- HEATMAP LDEN -->
+    <div id="heatmap_lden" class="page">
+        <h1>Heatmap EU Lden</h1>
 
+        <p>
+        Diese Heatmap zeigt den nach EU-Richtlinie berechneten Lärmindex
+        <strong>Lden (Day-Evening-Night Level)</strong>.
+
+        <br><br>
+
+        Berechnung nach EU-Umgebungslärmrichtlinie:
+
+        <br>
+        • Tag (06–18 Uhr): normaler Pegel<br>
+        • Abend (18–22 Uhr): <strong>+5 dB Zuschlag</strong><br>
+        • Nacht (22–06 Uhr): <strong>+10 dB Zuschlag</strong>
+
+        <br><br>
+
+        Dadurch wird der stärkere Einfluss von Abend- und Nachtlärm
+        auf Gesundheit und Schlaf berücksichtigt.
+        </p>
+
+        <div class="heatmap-grid" id="heatmapLdenGrid"></div>
+
+        <div class="heatmap-legend">
+            <div class="legend-item"><div class="legend-color" style="background:#00aa00"></div> &lt;53 dB (WHO Ziel)</div>
+            <div class="legend-item"><div class="legend-color" style="background:#88cc00"></div> 53–59 dB</div>
+            <div class="legend-item"><div class="legend-color" style="background:#ffaa00"></div> 59–65 dB</div>
+            <div class="legend-item"><div class="legend-color" style="background:#ff0000"></div> &gt;65 dB (kritisch)</div>
+        </div>
+    </div>
     <!-- L271 ANALYSE -->
     <div id="analyse" class="page">
         <h1>L271 Verkehrsanalyse</h1>
@@ -650,6 +682,29 @@ function calculateNoise(data) {
         ) * 10
     ) / 10;
 }
+
+// ============================================
+// LDEN EINZELWERT (für Heatmap)
+// ============================================
+
+function calculateLdenValue(entry) {
+
+    if (!entry.time) return null;
+
+    let hour = parseInt(entry.time.split(":")[0]);
+
+    let value = calculateNoise(entry);
+
+    // EU Aufschläge
+    if (hour >= 18 && hour < 22) {
+        value += 5; // Abend
+    }
+    else if (hour >= 22 || hour < 6) {
+        value += 10; // Nacht
+    }
+
+    return value;
+}
 // ============================================
 // NAVIGATION
 // ============================================
@@ -717,6 +772,7 @@ async function loadHistory() {
             
             updateCharts();
             updateHeatmap();
+            updateHeatmapLden();
             updateWeekSummary();
             updateL271Analyse();
             updateExportPreview();
@@ -1297,7 +1353,65 @@ function getHeatColor(db) {
     if (db >= 53) return '#88cc00';
     return '#00aa00';
 }
+//==============HEATMAPLDAN==================
+function updateHeatmapLden() {
 
+    const weekdays = ['Mo','Di','Mi','Do','Fr','Sa','So'];
+    let heatData = {};
+
+    historyData.forEach(e => {
+
+        if (!e.date || !e.time) return;
+
+        let date = new Date(e.date);
+        let weekday = (date.getDay() + 6) % 7;
+        let hour = parseInt(e.time.split(':')[0]);
+
+        let key = `${weekday}_${hour}`;
+
+        if (!heatData[key]) {
+            heatData[key] = { sum:0, count:0 };
+        }
+
+        let lden = calculateLdenValue(e);
+
+        heatData[key].sum += lden;
+        heatData[key].count++;
+
+    });
+
+    let html = '<div class="heatmap-cell heatmap-header"></div>';
+
+    weekdays.forEach(w=>{
+        html += `<div class="heatmap-cell heatmap-header">${w}</div>`;
+    });
+
+    for (let hour=0; hour<24; hour++) {
+
+        html += `<div class="heatmap-cell heatmap-hour">${hour.toString().padStart(2,'0')}:00</div>`;
+
+        for (let weekday=0; weekday<7; weekday++) {
+
+            let key = `${weekday}_${hour}`;
+            let avg='--';
+            let color='#222';
+
+            if (heatData[key]) {
+
+                avg = (heatData[key].sum / heatData[key].count).toFixed(0);
+                color = getHeatColor(parseFloat(avg));
+
+            }
+
+            html += `<div class="heatmap-cell" style="background:${color}">${avg}</div>`;
+
+        }
+
+    }
+
+    document.getElementById("heatmapLdenGrid").innerHTML = html;
+
+}    
 // ============================================
 // L271 ANALYSE
 // ============================================
