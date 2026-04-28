@@ -1064,7 +1064,8 @@ function updateWeekChart() {
             dailyData[date] = { cars: 0, noise: [], peaks: [] };
         }
         dailyData[date].cars = e.cars_today || 0;
-        if (e.noise1h) dailyData[date].noise.push(e.noise1h);
+        // gewichteter Lärmwert
+        dailyData[date].noise.push(calculateNoise(e));
         if (e.peak) dailyData[date].peaks.push(e.peak);
     });
 
@@ -1141,7 +1142,8 @@ function updateWeekSummary() {
             dailyData[date] = { cars: 0, noise: [], peaks: [] };
         }
         dailyData[date].cars = e.cars_today || 0;
-        if (e.noise1h) dailyData[date].noise.push(e.noise1h);
+        // gewichteter Lärmwert
+        dailyData[date].noise.push(calculateNoise(e));
         if (e.peak) dailyData[date].peaks.push(e.peak);
     });
 
