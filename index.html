@@ -357,6 +357,8 @@ canvas {
                 <div class="card">📈 Peak 1 h: <strong id="peak1h">--</strong> dB</div>
                 <div class="card">⚡ Peak 3 s: <strong id="peak3s">--</strong> dB</div>
 
+                <div class="card">EU Lärmindex (Lden): <strong id="lden_value">--</strong></div>
+
                 <div class="card">Lärmstatus: <strong id="noise_status">--</strong></div>
                 <div class="card">Spitzenlärm: <strong id="peak_status">--</strong></div>
 
@@ -722,7 +724,40 @@ async function loadHistory() {
         console.error("Fehler beim Laden der History:", e);
     }
 }
+// EU Lärm Berechnen======================
+function calculateLden(dataArray) {
 
+    let day = [];
+    let evening = [];
+    let night = [];
+
+    dataArray.forEach(e => {
+
+        if (!e.time || e.noise1h === undefined) return;
+
+        let hour = parseInt(e.time.split(":")[0]);
+        let noise = Number(e.noise1h);
+
+        if (hour >= 6 && hour < 18) {
+            day.push(noise);
+        }
+        else if (hour >= 18 && hour < 22) {
+            evening.push(noise + 5);
+        }
+        else {
+            night.push(noise + 10);
+        }
+
+    });
+
+    let all = [...day, ...evening, ...night];
+
+    if (all.length === 0) return null;
+
+    let energySum = all.reduce((sum, n) => sum + Math.pow(10, n / 10), 0);
+
+    return (10 * Math.log10(energySum / all.length)).toFixed(1);
+}   
 // ============================================
 // DASHBOARD FUNKTIONEN
 // ============================================
@@ -1278,6 +1313,11 @@ function updateL271Analyse() {
     document.getElementById("avg7_noise").innerHTML = `${avgNoise} <small>dB</small>`;
     document.getElementById("avg7_cars").innerHTML = `${avgCars} <small>/h</small>`;
 
+//=======EU DB Werte========
+    let lden = calculateLden(historyData);
+
+    document.getElementById("lden_value").textContent = lden + " dB";
+    
     // Grenzwertüberschreitungen
     let total = allNoise.length;
     let exceedWho = allNoise.filter(n => n >= 53).length;
