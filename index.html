@@ -321,7 +321,7 @@ canvas {
 
 <div id="menu">
 
-    <h2>🚗 Traffic Monitor</h2>
+    <h2>🚗 Privates Umweltmessprojekt – Verkehr & Lärm L271</h2>
 
     <button onclick="showPage('dashboard')" class="active">Dashboard</button>
     <button onclick="showPage('traffic')">Verkehr Verlauf</button>
@@ -335,6 +335,8 @@ canvas {
     <button onclick="showPage('export')">Daten Export</button>
     <button onclick="showPage('map')">Messstrecke</button>
     <button onclick="showPage('disclaimer')">Disclaimer</button>
+    <button onclick="showPage('privacy')">Datenschutz</button>
+    <button onclick="showPage('legal')">Impressum</button>
 
 </div>
 
@@ -372,6 +374,11 @@ canvas {
                 <div class="card">Belastung: <strong id="traffic_index_status">--</strong></div>
 
                 <div class="card">🕐 Aktualisierung: <strong id="update_time">--</strong></div>
+                <div style="margin-top:40px; font-size:12px; color:#888;">
+                Privates Umweltmessprojekt – keine amtliche Messstation.
+                Alle dargestellten Werte sind rein statistische
+                Umweltmessdaten einer privaten Messanlage.
+                </div>
 
                 <h2>Lärmgrenzwerte</h2>
 
@@ -644,7 +651,139 @@ canvas {
     
 </div>
 </div>
+<div id="privacy" class="page">
 
+<h1>Datenschutzerklärung</h1>
+
+<div class="lawbox">
+
+<h2>1. Allgemeine Hinweise</h2>
+
+Der Schutz personenbezogener Daten ist ein wichtiges Anliegen.
+Diese Website dient ausschließlich der Darstellung von
+Umweltmesswerten einer privaten Lärmmessstation.
+
+Es werden keine personenbezogenen Daten erhoben,
+verarbeitet oder gespeichert.
+
+<h2>2. Verantwortlicher</h2>
+
+Verantwortlich für diese Website ist der Betreiber des
+privaten Projekts „Traffic Monitor L271“.
+
+Kontakt:
+traffic-monitorL271@outlook.de
+
+<h2>3. Art der verarbeiteten Daten</h2>
+
+Die Website verarbeitet ausschließlich technische
+Umweltmesswerte einer privaten Messstation:
+
+• Schalldruckpegel (dB)<br>
+• statistische Durchschnittswerte<br>
+• Lautstärkespitzen<br>
+• daraus abgeleitete Verkehrsindikatoren
+
+Diese Daten enthalten **keine personenbezogenen Informationen**.
+
+<h2>4. Keine Audioaufzeichnungen</h2>
+
+Der eingesetzte Sensor dient ausschließlich zur
+Messung des physikalischen Schalldruckpegels.
+
+Es werden keine Gespräche oder Audioinhalte
+aufgezeichnet oder gespeichert.
+
+Eine Rekonstruktion von Gesprächen ist technisch nicht möglich.
+
+<h2>5. Keine Video- oder Bildaufnahmen</h2>
+
+Diese Website verwendet:
+
+• keine Kamera<br>
+• keine Kennzeichenerkennung<br>
+• keine Gesichtserkennung
+
+<h2>6. Server-Logfiles</h2>
+
+Beim Aufruf der Website können technisch notwendige
+Server-Logfiles entstehen (z. B. IP-Adresse, Zeitpunkt
+des Zugriffs).
+
+Diese Daten werden ausschließlich zur technischen
+Bereitstellung der Website verwendet und nicht
+mit anderen Datenquellen zusammengeführt.
+
+<h2>7. Cookies</h2>
+
+Diese Website verwendet **keine Cookies**.
+
+<h2>8. Tracking</h2>
+
+Es werden **keine Analyse- oder Trackingdienste**
+(z.B. Google Analytics) eingesetzt.
+
+<h2>9. Rechtsgrundlage</h2>
+
+Da keine personenbezogenen Daten verarbeitet werden,
+findet die DSGVO auf die dargestellten Umweltmesswerte
+keine Anwendung.
+
+<h2>10. Hinweis</h2>
+
+Die dargestellten Werte stammen aus einer privaten
+Messstation und stellen keine amtlichen Messungen dar.
+
+</div>
+</div>
+<div id="legal" class="page">
+
+<h1>Impressum</h1>
+
+<div class="lawbox">
+
+Angaben gemäß § 5 TMG
+
+<h2>Betreiber</h2>
+
+Privates Projekt<br>
+Traffic Monitor L271<br>
+Völklingen, Deutschland
+
+<h2>Kontakt</h2>
+
+E-Mail: traffic-monitorL271@outlook.de
+
+<h2>Projektbeschreibung</h2>
+
+Diese Website ist ein nicht kommerzielles,
+privates Informationsprojekt zur Darstellung
+von Verkehrs- und Lärmdaten einer privaten
+Messstation.
+
+Die Website dient ausschließlich der
+Informations- und Analysezwecken.
+
+<h2>Haftung für Inhalte</h2>
+
+Die Inhalte dieser Website wurden mit größter
+Sorgfalt erstellt. Für die Richtigkeit,
+Vollständigkeit und Aktualität der Inhalte
+kann jedoch keine Gewähr übernommen werden.
+
+<h2>Haftung für Links</h2>
+
+Diese Website enthält derzeit keine externen
+Links zu anderen Websites.
+
+<h2>Urheberrecht</h2>
+
+Die auf dieser Website dargestellten Inhalte,
+Diagramme und Auswertungen wurden vom Betreiber
+erstellt und unterliegen dem Urheberrecht.
+
+</div>
+</div>
 <script>
 
 // ============================================
