@@ -331,12 +331,14 @@ canvas {
     <button onclick="showPage('peak')">Peak Verlauf</button>
     <button onclick="showPage('heatmap')">Lärm Heatmap</button>
     <button onclick="showPage('heatmap_lden')">Heatmap EU Lden</button>
+    <button onclick="showPage('air')">Luftqualität</button>
     <button onclick="showPage('analyse')">L271 Analyse</button>
     <button onclick="showPage('export')">Daten Export</button>
     <button onclick="showPage('map')">Messstrecke</button>
     <button onclick="showPage('disclaimer')">Disclaimer</button>
     <button onclick="showPage('privacy')">Datenschutz</button>
     <button onclick="showPage('legal')">Impressum</button>
+    
 
 </div>
 
@@ -372,6 +374,25 @@ canvas {
 
                 <div class="card">Verkehrsindex: <strong id="traffic_index">--</strong></div>
                 <div class="card">Belastung: <strong id="traffic_index_status">--</strong></div>
+
+                <div class="card">🌫 PM2.5: <strong id="pm25_value">--</strong> µg/m³</div>
+                <div class="card">🌫 PM10: <strong id="pm10_value">--</strong> µg/m³</div>
+                <div class="card">🌍 EU Luftqualitätsindex: <strong id="aqi_value">--</strong></div>
+                <div class="card">Luftqualität: <strong id="aqi_status">--</strong></div>
+
+                <h2>Luftqualitätsgrenzwerte</h2>
+
+                <div class="lawbox">
+                PM2.5 WHO Empfehlung: <strong>5 µg/m³</strong><br>
+                PM2.5 EU Grenzwert: <strong>25 µg/m³</strong><br><br>
+    
+                PM10 WHO Empfehlung: <strong>15 µg/m³</strong><br>
+                PM10 EU Grenzwert: <strong>45 µg/m³</strong><br><br>
+
+                Aktuell:<br>
+                PM2.5: <strong id="pm25_value2">--</strong><br>
+                PM10: <strong id="pm10_value2">--</strong>
+                </div>
 
                 <div class="card">🕐 Aktualisierung: <strong id="update_time">--</strong></div>
                 <div style="margin-top:40px; font-size:12px; color:#888;">
@@ -498,6 +519,22 @@ canvas {
             <div class="legend-item"><div class="legend-color" style="background:#ff0000"></div> &gt;65 dB (kritisch)</div>
         </div>
     </div>
+    
+    <div id="air" class="page">
+
+<h1>Luftqualität</h1>
+
+<div class="chart-container">
+<canvas id="pm25Chart"></canvas>
+</div>
+
+<div class="chart-container">
+<canvas id="pm10Chart"></canvas>
+</div>
+
+</div>
+    
+    
     <!-- L271 ANALYSE -->
     <div id="analyse" class="page">
         <h1>L271 Verkehrsanalyse</h1>
@@ -946,6 +983,13 @@ async function loadTraffic() {
         document.getElementById("peak1h").textContent = last.peak ?? "--";
         document.getElementById("peak3s").textContent = last.peak3s ?? "--";
 
+        // Luftqualität
+        document.getElementById("pm25_value").textContent = last.pm25 ?? "--";
+        document.getElementById("pm10_value").textContent = last.pm10 ?? "--";
+        document.getElementById("aqi_value").textContent = last.aqi ?? "--";
+
+        updateAQIStatus(last.aqi);
+
         document.getElementById("update_time").textContent =
             new Date().toLocaleTimeString();
 
@@ -1030,6 +1074,47 @@ function calculateLden(dataArray) {
 
     return lden.toFixed(1);
 }
+// Funktion Aqi EU Luftverschmutzung--------------
+function updateAQIStatus(aqi) {
+
+    if (aqi === undefined || aqi === null) {
+        document.getElementById("aqi_status").textContent = "--";
+        return;
+    }
+
+    let text = "";
+    let cls = "";
+
+    if (aqi <= 20) {
+        text = "sehr gut";
+        cls = "status-good";
+    }
+    else if (aqi <= 40) {
+        text = "gut";
+        cls = "status-good";
+    }
+    else if (aqi <= 60) {
+        text = "mäßig";
+        cls = "status-warn";
+    }
+    else if (aqi <= 80) {
+        text = "schlecht";
+        cls = "status-bad";
+    }
+    else if (aqi <= 100) {
+        text = "sehr schlecht";
+        cls = "status-critical";
+    }
+    else {
+        text = "extrem schlecht";
+        cls = "status-critical";
+    }
+
+    document.getElementById("aqi_status").innerHTML =
+        `<span class="${cls}">${text}</span>`;
+}    
+    
+    
 // ============================================
 // DASHBOARD FUNKTIONEN
 // ============================================
@@ -1240,6 +1325,8 @@ function updateCharts() {
     let cars = historyData.map(e => e.cars_hour || 0);
     let noise = historyData.map(e => calculateNoise(e));
     let peaks = historyData.map(e => e.peak || 0);
+    let pm25 = historyData.map(e => e.pm25 || 0);
+    let pm10 = historyData.map(e => e.pm10 || 0);
 
     // Traffic Chart
     destroyChart('traffic');
@@ -1295,6 +1382,44 @@ function updateCharts() {
         options: getChartOptions("dB", 50, 100)
     });
 
+    //PM============================
+    destroyChart('pm25');
+
+    charts.pm25 = new Chart(document.getElementById("pm25Chart"), {
+    type: "line",
+    data: {
+    labels: labels,
+    datasets: [{
+    label: "PM2.5 µg/m³",
+    data: pm25,
+    borderColor: "#00ccff",
+    backgroundColor: "rgba(0,204,255,0.1)",
+    fill: true,
+    tension: 0.3
+}]
+},
+options: getChartOptions("µg/m³", 0, 80)
+});
+
+    //pm10=========================================
+ destroyChart('pm10');
+
+charts.pm10 = new Chart(document.getElementById("pm10Chart"), {
+type: "line",
+data: {
+labels: labels,
+datasets: [{
+label: "PM10 µg/m³",
+data: pm10,
+borderColor: "#ffcc00",
+backgroundColor: "rgba(255,204,0,0.1)",
+fill: true,
+tension: 0.3
+}]
+},
+options: getChartOptions("µg/m³", 0, 120)
+});   
+    
     // Daily Chart
     updateDailyChart();
     
