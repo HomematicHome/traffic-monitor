@@ -333,6 +333,7 @@ canvas {
     <button onclick="showPage('heatmap_lden')">Heatmap EU Lden</button>
     <button onclick="showPage('air')">Luftqualität</button>
     <button onclick="showPage('analyse')">L271 Analyse</button>
+    <button onclick="showPage('environment')">Umweltanalyse</button>
     <button onclick="showPage('export')">Daten Export</button>
     <button onclick="showPage('map')">Messstrecke</button>
     <button onclick="showPage('disclaimer')">Disclaimer</button>
@@ -597,6 +598,39 @@ canvas {
         </div>
     </div>
 
+    <div id="environment" class="page">
+
+<h1>Umweltanalyse</h1>
+<p>Zusammenhang zwischen Verkehr, Lärm und Luftverschmutzung auf der L271</p>
+
+<div class="analyse-grid">
+
+<div class="analyse-card">
+<h3>🚗 Verkehr → Lärm</h3>
+<div class="analyse-value" id="corr_cars_noise">--</div>
+<div class="analyse-label">Korrelation</div>
+</div>
+
+<div class="analyse-card">
+<h3>🚗 Verkehr → PM10</h3>
+<div class="analyse-value" id="corr_cars_pm10">--</div>
+<div class="analyse-label">Korrelation</div>
+</div>
+
+<div class="analyse-card">
+<h3>🚗 Verkehr → PM2.5</h3>
+<div class="analyse-value" id="corr_cars_pm25">--</div>
+<div class="analyse-label">Korrelation</div>
+</div>
+
+<div class="analyse-card">
+<h3>📊 Interpretation</h3>
+<div id="env_interpretation">--</div>
+</div>
+
+</div>
+
+</div>
     <!-- EXPORT -->
     <div id="export" class="page">
         <h1>Daten Export</h1>
@@ -1027,6 +1061,7 @@ async function loadHistory() {
             updateWeekSummary();
             updateL271Analyse();
             updateExportPreview();
+            updateEnvironmentAnalysis();
         }
     } catch (e) {
         console.error("Fehler beim Laden der History:", e);
@@ -1117,6 +1152,31 @@ function updateAQIStatus(aqi) {
         `<span class="${cls}">${text}</span>`;
 }    
     
+function correlation(x, y) {
+
+    let n = x.length;
+
+    if (n === 0) return 0;
+
+    let avgX = x.reduce((a,b)=>a+b,0)/n;
+    let avgY = y.reduce((a,b)=>a+b,0)/n;
+
+    let num = 0;
+    let denX = 0;
+    let denY = 0;
+
+    for (let i=0;i<n;i++) {
+
+        let dx = x[i]-avgX;
+        let dy = y[i]-avgY;
+
+        num += dx*dy;
+        denX += dx*dx;
+        denY += dy*dy;
+    }
+
+    return num / Math.sqrt(denX*denY);
+}
     
 // ============================================
 // DASHBOARD FUNKTIONEN
@@ -1310,6 +1370,43 @@ function updateLawCheck(data) {
         `<span class="${cls}">${text}</span>`;
 }
 
+  function updateEnvironmentAnalysis() {
+
+    if (historyData.length < 10) return;
+
+    let cars = historyData.map(e => e.cars_hour || 0);
+    let noise = historyData.map(e => calculateNoise(e));
+    let pm10 = historyData.map(e => e.pm10 || 0);
+    let pm25 = historyData.map(e => e.pm25 || 0);
+
+    let corrNoise = correlation(cars, noise);
+    let corrPM10 = correlation(cars, pm10);
+    let corrPM25 = correlation(cars, pm25);
+
+    document.getElementById("corr_cars_noise").textContent = corrNoise.toFixed(2);
+    document.getElementById("corr_cars_pm10").textContent = corrPM10.toFixed(2);
+    document.getElementById("corr_cars_pm25").textContent = corrPM25.toFixed(2);
+
+    let interpretation = "";
+
+    if (corrPM10 > 0.5) {
+        interpretation += "🚗 Verkehr hat starken Einfluss auf PM10.<br>";
+    }
+
+    if (corrNoise > 0.6) {
+        interpretation += "🔊 Verkehr verursacht deutlich erhöhten Lärm.<br>";
+    }
+
+    if (corrPM25 > 0.4) {
+        interpretation += "🌫 Feinstaub PM2.5 steigt mit Verkehrsaufkommen.<br>";
+    }
+
+    if (interpretation === "") {
+        interpretation = "Kein klarer Zusammenhang erkennbar.";
+    }
+
+    document.getElementById("env_interpretation").innerHTML = interpretation;
+}
 // ============================================
 // CHARTS
 // ============================================
