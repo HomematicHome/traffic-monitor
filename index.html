@@ -6,6 +6,7 @@
 <title>Traffic Monitor Völklingen</title>
 
 <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+<script src="https://cdn.jsdelivr.net/npm/chartjs-plugin-annotation@3.0.1"></script>
 
 <style>
 
@@ -985,6 +986,8 @@ erstellt und unterliegen dem Urheberrecht.
 </div>
 <script>
 
+Chart.register(window['chartjs-plugin-annotation']);   
+    
 // ============================================
 // GLOBALE VARIABLEN
 // ============================================
@@ -1561,14 +1564,56 @@ function updateCharts() {
     tension: 0.3
 }]
 },
-options: getChartOptions("µg/m³", 0, 80)
+options: {
+
+...getChartOptions("µg/m³",0,80),
+
+plugins: {
+
+annotation: {
+
+annotations: {
+
+who: {
+type: 'line',
+yMin: 5,
+yMax: 5,
+borderColor: 'green',
+borderWidth: 2,
+label: {
+display: true,
+content: 'WHO 5 µg/m³'
+}
+},
+
+eu: {
+type: 'line',
+yMin: 25,
+yMax: 25,
+borderColor: 'orange',
+borderWidth: 2,
+label: {
+display: true,
+content: 'EU 25 µg/m³'
+}
+}
+
+}
+
+}
+
+}
+
+}
 });
 
     //pm10=========================================
- destroyChart('pm10');
+destroyChart('pm10');
 
 charts.pm10 = new Chart(document.getElementById("pm10Chart"), {
+
 type: "line",
+
 data: {
 labels: labels,
 datasets: [{
@@ -1580,8 +1625,50 @@ fill: true,
 tension: 0.3
 }]
 },
-options: getChartOptions("µg/m³", 0, 120)
-});   
+
+options: {
+
+...getChartOptions("µg/m³",0,120),
+
+plugins: {
+
+annotation: {
+
+annotations: {
+
+who: {
+type: 'line',
+yMin: 15,
+yMax: 15,
+borderColor: 'green',
+borderWidth: 2,
+label: {
+display: true,
+content: 'WHO 15 µg/m³'
+}
+},
+
+eu: {
+type: 'line',
+yMin: 45,
+yMax: 45,
+borderColor: 'red',
+borderWidth: 2,
+label: {
+display: true,
+content: 'EU 45 µg/m³'
+}
+}
+
+}
+
+}
+
+}
+
+}
+
+});
     
     // Daily Chart
     updateDailyChart();
