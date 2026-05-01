@@ -988,6 +988,9 @@ async function loadTraffic() {
         document.getElementById("pm10_value").textContent = last.pm10 ?? "--";
         document.getElementById("aqi_value").textContent = last.aqi ?? "--";
 
+        document.getElementById("pm25_value2").textContent = last.pm25 ?? "--";
+        document.getElementById("pm10_value2").textContent = last.pm10 ?? "--";
+
         updateAQIStatus(last.aqi);
 
         document.getElementById("update_time").textContent =
