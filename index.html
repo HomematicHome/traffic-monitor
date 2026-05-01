@@ -333,6 +333,7 @@ canvas {
     <button onclick="showPage('heatmap')">Lärm Heatmap</button>
     <button onclick="showPage('heatmap_lden')">Heatmap EU Lden</button>
     <button onclick="showPage('air')">Luftqualität</button>
+    <button onclick="showPage('heatmap_pm')">Feinstaub Heatmap</button>
     <button onclick="showPage('analyse')">L271 Analyse</button>
     <button onclick="showPage('environment')">Umweltanalyse</button>
     <button onclick="showPage('export')">Daten Export</button>
@@ -599,7 +600,47 @@ ausschließlich der allgemeinen Information.
 
 </div>
     
-    
+ <div id="heatmap_pm" class="page">
+
+<h1>Feinstaub Heatmap (24h × 7 Tage)</h1>
+
+<p>
+Diese Heatmap zeigt die durchschnittliche Feinstaubbelastung
+(PM10) pro Stunde und Wochentag.
+</p>
+
+<div class="heatmap-grid" id="heatmapPMGrid"></div>
+
+<div class="heatmap-legend">
+
+<div class="legend-item">
+<div class="legend-color" style="background:#00aa00"></div>
+&lt;15 µg/m³ (WHO Ziel)
+</div>
+
+<div class="legend-item">
+<div class="legend-color" style="background:#88cc00"></div>
+15-30 µg/m³
+</div>
+
+<div class="legend-item">
+<div class="legend-color" style="background:#ffff00"></div>
+30-45 µg/m³
+</div>
+
+<div class="legend-item">
+<div class="legend-color" style="background:#ffaa00"></div>
+45-60 µg/m³
+</div>
+
+<div class="legend-item">
+<div class="legend-color" style="background:#ff0000"></div>
+&gt;60 µg/m³ kritisch
+</div>
+
+</div>
+
+</div>   
     <!-- L271 ANALYSE -->
     <div id="analyse" class="page">
         <h1>L271 Verkehrsanalyse</h1>
@@ -1124,6 +1165,7 @@ async function loadHistory() {
             updateCharts();
             updateHeatmap();
             updateHeatmapLden();
+            updateHeatmapPM();
             updateWeekSummary();
             updateL271Analyse();
             updateExportPreview();
@@ -1178,7 +1220,67 @@ function calculateLden(dataArray) {
 
     return lden.toFixed(1);
 }
-// Funktion Aqi EU Luftverschmutzung--------------
+
+function updateHeatmapPM() {
+
+const weekdays = ['Mo','Di','Mi','Do','Fr','Sa','So'];
+
+let heatData = {};
+
+historyData.forEach(e => {
+
+if (!e.date || !e.time || e.pm10 === undefined) return;
+
+let date = new Date(e.date);
+let weekday = (date.getDay()+6)%7;
+let hour = parseInt(e.time.split(':')[0]);
+
+let key = `${weekday}_${hour}`;
+
+if(!heatData[key]) {
+heatData[key] = {sum:0,count:0};
+}
+
+heatData[key].sum += Number(e.pm10);
+heatData[key].count++;
+
+});
+
+let html = '<div class="heatmap-cell heatmap-header"></div>';
+
+weekdays.forEach(w=>{
+html += `<div class="heatmap-cell heatmap-header">${w}</div>`;
+});
+
+for(let hour=0;hour<24;hour++){
+
+html += `<div class="heatmap-cell heatmap-hour">${hour.toString().padStart(2,'0')}:00</div>`;
+
+for(let weekday=0;weekday<7;weekday++){
+
+let key=`${weekday}_${hour}`;
+
+let avg='--';
+let color='#222';
+
+if(heatData[key]){
+
+avg=(heatData[key].sum/heatData[key].count).toFixed(0);
+color=getPMColor(parseFloat(avg));
+
+}
+
+html+=`<div class="heatmap-cell" style="background:${color}">${avg}</div>`;
+
+}
+
+}
+
+document.getElementById("heatmapPMGrid").innerHTML=html;
+
+}
+    
+    // Funktion Aqi EU Luftverschmutzung--------------
 function updateAQIStatus(aqi) {
 
     if (aqi === undefined || aqi === null) {
@@ -1952,6 +2054,16 @@ function getHeatColor(db) {
     if (db >= 56) return '#ffff00';
     if (db >= 53) return '#88cc00';
     return '#00aa00';
+}
+
+function getPMColor(pm){
+
+    if(pm >= 60) return '#ff0000';
+    if(pm >= 45) return '#ffaa00';
+    if(pm >= 30) return '#ffff00';
+    if(pm >= 15) return '#88cc00';
+    return '#00aa00';
+
 }
 //==============HEATMAPLDAN==================
 function updateHeatmapLden() {
