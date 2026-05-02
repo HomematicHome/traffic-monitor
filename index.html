@@ -1163,7 +1163,7 @@ async function loadHistory() {
         let today = new Date();
 
         // letzte 7 Tage laden
-        for (let i = 6; i >= 0; i--) {
+        for (let i = 364; i >= 0; i--) {
 
             let d = new Date();
             d.setDate(today.getDate() - i);
