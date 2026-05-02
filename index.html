@@ -1154,14 +1154,49 @@ async function loadTraffic() {
 }
 
 async function loadHistory() {
-    try {
-        let r = await fetch("traffic-history.json?" + Date.now());
-        let data = await r.json();
 
-        if (Array.isArray(data) && data.length > 0) {
-            historyData = data;
-            console.log("History geladen:", data.length, "Einträge");
-            
+    try {
+
+        historyData = [];
+
+        // heute
+        let today = new Date();
+
+        // letzte 7 Tage laden
+        for (let i = 6; i >= 0; i--) {
+
+            let d = new Date();
+            d.setDate(today.getDate() - i);
+
+            let date =
+                d.getFullYear() + "-" +
+                String(d.getMonth() + 1).padStart(2,'0') + "-" +
+                String(d.getDate()).padStart(2,'0');
+
+            try {
+
+                let r = await fetch("traffic/" + date + ".json?" + Date.now());
+
+                if (r.ok) {
+
+                    let data = await r.json();
+
+                    if (Array.isArray(data)) {
+                        historyData = historyData.concat(data);
+                    }
+
+                }
+
+            } catch(e) {
+                console.log("Keine Datei für", date);
+            }
+
+        }
+
+        console.log("History geladen:", historyData.length);
+
+        if (historyData.length > 0) {
+
             updateCharts();
             updateHeatmap();
             updateHeatmapLden();
@@ -1170,10 +1205,15 @@ async function loadHistory() {
             updateL271Analyse();
             updateExportPreview();
             updateEnvironmentAnalysis();
+
         }
-    } catch (e) {
-        console.error("Fehler beim Laden der History:", e);
+
+    } catch(e) {
+
+        console.error("History Fehler:", e);
+
     }
+
 }
 // EU Lärm Berechnen======================
 function calculateLden(dataArray) {
