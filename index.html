@@ -1173,7 +1173,7 @@ async function loadPollen() {
 
 try {
 
-let r = await fetch("https://opendata.dwd.de/climate_environment/health/alerts/s31fg.json");
+let r = await fetch("https://api.allorigins.win/raw?url=https://opendata.dwd.de/climate_environment/health/alerts/s31fg.json");
 
 let data = await r.json();
 
