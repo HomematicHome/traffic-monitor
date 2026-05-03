@@ -1152,7 +1152,61 @@ async function loadTraffic() {
         console.error("Fehler beim Laden:", e);
     }
 }
+//
+    //Pollen=========================================
+    let pollenValue = 0;
 
+async function loadPollen() {
+
+try {
+
+let r = await fetch("https://opendata.dwd.de/climate_environment/health/alerts/s31fg.json");
+
+let data = await r.json();
+
+/*
+Regionenliste im JSON:
+für Saarland meist Region:
+"Rhein, Pfalz, Nahe und Mosel"
+(partregion_id ≈ 101)
+*/
+
+let region = data.content.find(r => r.partregion_id == 101);
+
+if(region){
+
+let pollen = region.Pollen;
+
+/* mehrere Pollenarten zusammenfassen */
+
+let values = [
+pollen.Hasel?.today,
+pollen.Erle?.today,
+pollen.Birke?.today,
+pollen.Graeser?.today,
+pollen.Roggen?.today,
+pollen.Beifuss?.today
+];
+
+/* höchsten Wert nehmen */
+
+pollenValue = Math.max(...values.map(v => parseFloat(v) || 0));
+
+console.log("Pollenindex:", pollenValue);
+
+updateCharts();   // Chart neu zeichnen
+
+}
+
+} catch(e){
+
+console.log("Pollen Fehler", e);
+
+}
+
+}
+
+    //=======================================Pollen Ende=========
 async function loadHistory() {
 
     try {
@@ -1613,6 +1667,7 @@ function updateCharts() {
     let peaks = historyData.map(e => e.peak || 0);
     let pm25 = historyData.map(e => e.pm25 || 0);
     let pm10 = historyData.map(e => e.pm10 || 0);
+    let pollen = historyData.map(() => pollenValue);
 
     // Traffic Chart
     destroyChart('traffic');
@@ -1736,14 +1791,27 @@ type: "line",
 
 data: {
 labels: labels,
-datasets: [{
+datasets: [
+
+{
 label: "PM10 µg/m³",
 data: pm10,
 borderColor: "#ffcc00",
 backgroundColor: "rgba(255,204,0,0.1)",
 fill: true,
 tension: 0.3
-}]
+},
+
+{
+label: "Pollenindex",
+data: pollen,
+borderColor: "#00ffff",
+borderDash: [6,6],
+fill: false,
+tension: 0.3
+}
+
+]
 },
 
 options: {
@@ -2414,11 +2482,13 @@ function formatDate(dateStr) {
 
 loadHistory().then(() => {
     loadTraffic();
+    loadPollen();
 });
 
 // Auto-Update alle 60 Sekunden
 setInterval(loadTraffic, 60000);
 setInterval(loadHistory, 300000);
+setInterval(loadPollen, 3600000);
 
 </script>
 
