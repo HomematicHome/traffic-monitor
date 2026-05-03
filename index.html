@@ -736,6 +736,19 @@ Diese Heatmap zeigt die durchschnittliche Feinstaubbelastung
 </div>
 
 </div>
+
+<div class="analyse-card">
+<h3>🌫 Feinstaub-Ursache heute</h3>
+
+<div id="pm_source">
+
+🚗 Verkehr: -- %<br>
+🌼 Pollen: -- %<br>
+🌍 Hintergrund: -- %
+
+</div>
+
+</div>
     <!-- EXPORT -->
     <div id="export" class="page">
         <h1>Daten Export</h1>
@@ -1626,7 +1639,33 @@ function updateLawCheck(data) {
     document.getElementById("corr_cars_noise").textContent = corrNoise.toFixed(2);
     document.getElementById("corr_cars_pm10").textContent = corrPM10.toFixed(2);
     document.getElementById("corr_cars_pm25").textContent = corrPM25.toFixed(2);
+    // ===============================
+// PM10 Ursachen-Schätzung
+// ===============================
 
+let trafficShare = Math.max(0, corrPM10) * 100;
+
+let pollenShare = pollenValue * 20;
+
+if (pollenShare > 40) pollenShare = 40;
+
+let backgroundShare = 100 - trafficShare - pollenShare;
+
+trafficShare = Math.max(0, trafficShare);
+backgroundShare = Math.max(0, backgroundShare);
+
+let total = trafficShare + pollenShare + backgroundShare;
+
+trafficShare = Math.round(trafficShare / total * 100);
+pollenShare = Math.round(pollenShare / total * 100);
+backgroundShare = 100 - trafficShare - pollenShare;
+
+document.getElementById("pm_source").innerHTML = `
+🚗 Verkehr: ${trafficShare} %<br>
+🌼 Pollen: ${pollenShare} %<br>
+🌍 Hintergrund: ${backgroundShare} %
+`;
+      
     let interpretation = "";
 
     if (corrPM10 > 0.5) {
