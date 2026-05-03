@@ -1177,6 +1177,8 @@ let r = await fetch("https://opendata.dwd.de/climate_environment/health/alerts/s
 
 let data = await r.json();
 
+console.log("DWD Regionen:", data.content);
+
 /*
 Regionenliste im JSON:
 für Saarland meist Region:
@@ -1184,7 +1186,11 @@ für Saarland meist Region:
 (partregion_id ≈ 101)
 */
 
-let region = data.content.find(r => r.partregion_id == 101);
+let region = data.content.find(r =>
+    r.region_name && r.region_name.includes("Mosel")
+);
+
+console.log("Gefundene Region:", region);
 
 if(region){
 
