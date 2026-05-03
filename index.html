@@ -2468,13 +2468,11 @@ function formatDate(dateStr) {
 
 loadHistory().then(() => {
     loadTraffic();
-    loadPollen();
 });
 
 // Auto-Update alle 60 Sekunden
 setInterval(loadTraffic, 60000);
 setInterval(loadHistory, 300000);
-setInterval(loadPollen, 3600000);
 
 </script>
 
