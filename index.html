@@ -1592,7 +1592,8 @@ function updateLawCheck(data) {
 
 let trafficShare = Math.max(0, corrPM10) * 100;
 
-let pollenShare = pollenValue * 20;
+let pollenToday = historyData[historyData.length - 1]?.pollen || 0;
+let pollenShare = pollenToday * 20;
 
 if (pollenShare > 40) pollenShare = 40;
 
