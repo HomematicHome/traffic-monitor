@@ -1166,66 +1166,7 @@ async function loadTraffic() {
     }
 }
 //
-    //Pollen=========================================
-    let pollenValue = 0;
 
-async function loadPollen() {
-
-try {
-
-let r = await fetch("https://corsproxy.io/?https://opendata.dwd.de/climate_environment/health/alerts/s31fg.json");
-
-let data = await r.json();
-
-console.log("DWD Regionen:", data.content);
-
-/*
-Regionenliste im JSON:
-für Saarland meist Region:
-"Rhein, Pfalz, Nahe und Mosel"
-(partregion_id ≈ 101)
-*/
-
-let region = data.content.find(r =>
-    r.region_name && r.region_name.includes("Mosel")
-);
-
-console.log("Gefundene Region:", region);
-
-if(region){
-
-let pollen = region.Pollen;
-
-/* mehrere Pollenarten zusammenfassen */
-
-let values = [
-pollen.Hasel?.today,
-pollen.Erle?.today,
-pollen.Birke?.today,
-pollen.Graeser?.today,
-pollen.Roggen?.today,
-pollen.Beifuss?.today
-];
-
-/* höchsten Wert nehmen */
-
-pollenValue = Math.max(...values.map(v => parseFloat(v) || 0));
-
-console.log("Pollenindex:", pollenValue);
-
-updateCharts();   // Chart neu zeichnen
-
-}
-
-} catch(e){
-
-console.log("Pollen Fehler", e);
-
-}
-
-}
-
-    //=======================================Pollen Ende=========
 async function loadHistory() {
 
     try {
@@ -1712,7 +1653,7 @@ function updateCharts() {
     let peaks = historyData.map(e => e.peak || 0);
     let pm25 = historyData.map(e => e.pm25 || 0);
     let pm10 = historyData.map(e => e.pm10 || 0);
-    let pollen = historyData.map(() => pollenValue);
+    let pollen = historyData.map(e => e.pollen || 0);
 
     // Traffic Chart
     destroyChart('traffic');
