@@ -1173,14 +1173,20 @@ async function loadHistory() {
 
         historyData = [];
 
-        let indexRes = await fetch("traffic/index.json?" + Date.now());
-        let files = await indexRes.json();
+        // 🔥 GitHub API → alle Dateien im /traffic Ordner holen
+        let res = await fetch("https://api.github.com/repos/HomematicHome/traffic-monitor/contents/traffic");
+        let files = await res.json();
 
-        for (let file of files) {
+        for (let f of files) {
 
-            let r = await fetch("traffic/" + file + "?" + Date.now());
+            // nur JSON Dateien
+            if (!f.name.endsWith(".json")) continue;
+
+            // Datei laden
+            let r = await fetch(f.download_url + "?" + Date.now());
 
             if (r.ok) {
+
                 let data = await r.json();
 
                 if (Array.isArray(data)) {
@@ -1188,6 +1194,7 @@ async function loadHistory() {
                 } else {
                     historyData.push(data);
                 }
+
             }
         }
 
@@ -1211,15 +1218,6 @@ async function loadHistory() {
         console.error("History Fehler:", e);
 
     }
-
-}
-
-    } catch(e) {
-
-        console.error("History Fehler:", e);
-
-    }
-
 }
 // EU Lärm Berechnen======================
 function calculateLden(dataArray) {
