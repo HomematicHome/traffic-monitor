@@ -1177,26 +1177,32 @@ async function loadHistory() {
         let res = await fetch("https://api.github.com/repos/HomematicHome/traffic-monitor/contents/traffic");
         let files = await res.json();
 
+        // 🔥 sort + filter
+        files = files
+          .filter(f => f.name.endsWith(".json"))
+          .sort((a, b) => b.name.localeCompare(a.name));
+
         for (let f of files) {
 
-            // nur JSON Dateien
-            if (!f.name.endsWith(".json")) continue;
+        let r = await fetch(f.download_url + "?" + Date.now());
 
-            // Datei laden
-            let r = await fetch(f.download_url + "?" + Date.now());
+        if (r.ok) {
 
-            if (r.ok) {
+            let data = await r.json();
 
-                let data = await r.json();
-
-                if (Array.isArray(data)) {
-                    historyData.push(...data);
-                } else {
-                    historyData.push(data);
-                }
-
+            if (Array.isArray(data)) {
+            historyData.push(...data);
+            } else {
+            historyData.push(data);
             }
+
         }
+    }
+
+    // 🔥 GANZ WICHTIG
+    historyData.sort((a, b) => {
+      return (a.date + a.time).localeCompare(b.date + b.time);
+    });
 
         console.log("History geladen:", historyData.length);
 
