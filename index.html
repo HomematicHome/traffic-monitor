@@ -1173,16 +1173,22 @@ async function loadHistory() {
 
         historyData = [];
 
-        let r = await fetch("traffic/test.json?" + Date.now());
+        let indexRes = await fetch("traffic/index.json?" + Date.now());
+        let files = await indexRes.json();
 
-        if (r.ok) {
+        for (let file of files) {
 
-            let data = await r.json();
+            let r = await fetch("traffic/" + file + "?" + Date.now());
 
-            if (Array.isArray(data)) {
-                historyData = data;
+            if (r.ok) {
+                let data = await r.json();
+
+                if (Array.isArray(data)) {
+                    historyData.push(...data);
+                } else {
+                    historyData.push(data);
+                }
             }
-
         }
 
         console.log("History geladen:", historyData.length);
@@ -1199,6 +1205,14 @@ async function loadHistory() {
             updateEnvironmentAnalysis();
 
         }
+
+    } catch(e) {
+
+        console.error("History Fehler:", e);
+
+    }
+
+}
 
     } catch(e) {
 
