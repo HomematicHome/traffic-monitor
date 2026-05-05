@@ -1786,7 +1786,8 @@ data: pm10,
 borderColor: "#ffcc00",
 backgroundColor: "rgba(255,204,0,0.1)",
 fill: true,
-tension: 0.3
+tension: 0.3,
+yAxisID: 'y'
 },
 
 {
@@ -1795,11 +1796,39 @@ data: pollen,
 borderColor: "#00ffff",
 borderDash: [6,6],
 fill: false,
-tension: 0.3
+tension: 0.3,
+yAxisID: 'y1'
 }
 
 ]
 },
+
+options: {
+responsive: true,
+
+scales: {
+
+y: {
+type: 'linear',
+position: 'left',
+suggestedMin: 0,
+suggestedMax: 120,
+ticks: { color: "#ffcc00" }
+},
+
+y1: {
+type: 'linear',
+position: 'right',
+suggestedMin: 0,
+suggestedMax: 3,
+ticks: { color: "#00ffff", stepSize: 1 },
+grid: { drawOnChartArea: false }
+}
+
+}
+
+}
+});
 
 options: {
 
