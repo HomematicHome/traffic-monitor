@@ -1040,43 +1040,47 @@ erstellt und unterliegen dem Urheberrecht.
 </div>
 <script>
 
-Chart.register(window['chartjs-plugin-annotation']);
+Chart.register(window['chartjs-plugin-annotation']);   
+    
+// ============================================
+// GLOBALE VARIABLEN
+// ============================================
 
 let charts = {
     traffic: null,
     daily: null,
     noise: null,
     peak: null,
-    week: null,
-    pm25: null,
-    pm10: null
+    week: null
 };
 
 let historyData = [];
+let currentTraffic = {};
+
 let dailyRange = 7;
 
-// ======================================
+// ============================================
 // ZENTRALE LÄRMBERECHNUNG
-// ======================================
+// ============================================
 
 function calculateNoise(data) {
 
     const noise10 = Number(data.noise10) || 0;
     const noise1h = Number(data.noise1h) || 0;
-    const peak1h = Number(data.peak1h) || 0;
+    const peak = Number(data.peak) || 0;
 
     return Math.round(
         (
             (noise10 * 0.20) +
             (noise1h * 0.75) +
-            (peak1h * 0.05)
+            (peak * 0.05)
         ) * 10
     ) / 10;
 }
 
-// ======================================
-// LDEN
-// ======================================
+// ============================================
+// LDEN EINZELWERT (für Heatmap)
+// ============================================
 
 function calculateLdenValue(entry) {
 
@@ -1086,16 +1090,159 @@ function calculateLdenValue(entry) {
 
     let value = calculateNoise(entry);
 
+    // EU Aufschläge
     if (hour >= 18 && hour < 22) {
-        value += 5;
+        value += 5; // Abend
     }
     else if (hour >= 22 || hour < 6) {
-        value += 10;
+        value += 10; // Nacht
     }
 
     return value;
 }
+// ============================================
+// NAVIGATION
+// ============================================
 
+function showPage(page) {
+    document.querySelectorAll(".page").forEach(p => p.classList.remove("active"));
+    document.getElementById(page).classList.add("active");
+
+    document.querySelectorAll("#menu button").forEach(btn => btn.classList.remove("active"));
+    event.target.classList.add("active");
+}
+
+// ============================================
+// DATEN LADEN
+// ============================================
+
+async function loadTraffic() {
+
+    try {
+
+        if (!historyData || historyData.length === 0) return;
+
+        const last = historyData[historyData.length - 1];
+        
+        let noiseWeighted = calculateNoise(last);
+
+        last.noiseWeighted = noiseWeighted;
+
+        document.getElementById("cars_today").textContent = last.cars_today ?? "--";
+        document.getElementById("cars_hour").textContent = last.cars_hour ?? "--";
+
+        document.getElementById("noise10").textContent = last.noise10 ?? "--";
+        document.getElementById("noise1h").textContent = last.noise1h ?? "--";
+
+        document.getElementById("peak1h").textContent = last.peak ?? "--";
+        document.getElementById("peak3s").textContent = last.peak3s ?? "--";
+
+        // Luftqualität
+        document.getElementById("pm25_value").textContent = last.pm25 ?? "--";
+        document.getElementById("pm10_value").textContent = last.pm10 ?? "--";
+        document.getElementById("aqi_value").textContent = last.aqi ?? "--";
+
+        document.getElementById("pm25_value2").textContent = last.pm25 ?? "--";
+        document.getElementById("pm10_value2").textContent = last.pm10 ?? "--";
+
+        updateAQIStatus(last.aqi);
+
+        document.getElementById("update_time").textContent =
+            new Date().toLocaleTimeString();
+
+        updateTrafficLight(last);
+        updateNoiseStatus(last);
+        updatePeakStatus(last);
+        updateTrafficAnalysis(last);
+        // Verkehrsphase anzeigen
+        document.getElementById("rush_hour").textContent = detectTrafficPhase();
+
+        updateTrafficIndex(last);
+        updateLawCheck(last);
+        detectTrafficEvent(last);
+
+    } catch (e) {
+        console.error("Fehler beim Laden:", e);
+    }
+}
+//
+
+async function loadHistory() {
+
+    try {
+
+        historyData = [];
+
+      // letzte 7 Tage laden
+let dates = [];
+
+for (let i = 0; i < 7; i++) {
+
+    let d = new Date();
+
+    d.setDate(d.getDate() - i);
+
+    let dateStr =
+        d.toISOString().split('T')[0];
+
+    dates.push(dateStr);
+}
+
+// exakt 7 Dateien laden
+for (let date of dates) {
+
+    let url =
+        `https://raw.githubusercontent.com/HomematicHome/traffic-monitor/main/traffic/${date}.json`;
+
+    try {
+
+        let r = await fetch(url + "?" + Date.now());
+
+        if (!r.ok) continue;
+
+        let data = await r.json();
+
+        if (Array.isArray(data)) {
+
+            historyData.push(...data);
+
+        }
+
+    } catch(e) {
+
+        console.log("Datei fehlt:", date);
+
+    }
+
+}
+
+    // 🔥 GANZ WICHTIG
+    historyData.sort((a, b) => {
+      return (a.date + a.time).localeCompare(b.date + b.time);
+    });
+
+        console.log("History geladen:", historyData.length);
+
+        if (historyData.length > 0) {
+
+            updateCharts();
+            updateHeatmap();
+            updateHeatmapLden();
+            updateHeatmapPM();
+            updateWeekSummary();
+            updateL271Analyse();
+            updateExportPreview();
+            updateEnvironmentAnalysis();
+
+        }
+
+    } catch(e) {
+
+        console.error("History Fehler:", e);
+
+    }
+}
+// EU Lärm Berechnen======================
 function calculateLden(dataArray) {
 
     let day = [];
@@ -1121,6 +1268,8 @@ function calculateLden(dataArray) {
 
     });
 
+    if (day.length === 0 && evening.length === 0 && night.length === 0) return null;
+
     let dayEnergy =
         day.reduce((s,n)=>s+Math.pow(10,n/10),0) / Math.max(day.length,1);
 
@@ -1139,284 +1288,72 @@ function calculateLden(dataArray) {
     return lden.toFixed(1);
 }
 
-// ======================================
-// NAVIGATION
-// ======================================
+function updateHeatmapPM() {
 
-function showPage(page) {
+const weekdays = ['Mo','Di','Mi','Do','Fr','Sa','So'];
 
-    document.querySelectorAll(".page")
-        .forEach(p => p.classList.remove("active"));
+let heatData = {};
 
-    document.getElementById(page)
-        .classList.add("active");
+historyData.forEach(e => {
 
-    document.querySelectorAll("#menu button")
-        .forEach(btn => btn.classList.remove("active"));
+if (!e.date || !e.time || e.pm10 === undefined) return;
 
-    event.target.classList.add("active");
+let date = new Date(e.date);
+let weekday = (date.getDay()+6)%7;
+let hour = parseInt(e.time.split(':')[0]);
+
+let key = `${weekday}_${hour}`;
+
+if(!heatData[key]) {
+heatData[key] = {sum:0,count:0};
 }
 
-// ======================================
-// HISTORY LADEN
-// ======================================
+heatData[key].sum += Number(e.pm10);
+heatData[key].count++;
 
-async function loadHistory() {
+});
 
-    try {
+let html = '<div class="heatmap-cell heatmap-header"></div>';
 
-        historyData = [];
+weekdays.forEach(w=>{
+html += `<div class="heatmap-cell heatmap-header">${w}</div>`;
+});
 
-        let dates = [];
+for(let hour=0;hour<24;hour++){
 
-        for (let i = 0; i < 7; i++) {
+html += `<div class="heatmap-cell heatmap-hour">${hour.toString().padStart(2,'0')}:00</div>`;
 
-            let d = new Date();
+for(let weekday=0;weekday<7;weekday++){
 
-            d.setDate(d.getDate() - i);
+let key=`${weekday}_${hour}`;
 
-            dates.push(
-                d.toISOString().split('T')[0]
-            );
-        }
+let avg='--';
+let color='#222';
 
-        for (let date of dates) {
+if(heatData[key]){
 
-            let url =
-            `https://raw.githubusercontent.com/HomematicHome/traffic-monitor/main/traffic/${date}.json`;
+avg=(heatData[key].sum/heatData[key].count).toFixed(0);
+color=getPMColor(parseFloat(avg));
 
-            try {
-
-                let r = await fetch(url + "?" + Date.now());
-
-                if (!r.ok) continue;
-
-                let data = await r.json();
-
-                if (Array.isArray(data)) {
-                    historyData.push(...data);
-                }
-
-            } catch(e) {
-
-                console.log("Datei fehlt:", date);
-
-            }
-        }
-
-        historyData.sort((a, b) => {
-            return new Date(`${a.date}T${a.time}`) -
-                   new Date(`${b.date}T${b.time}`);
-        });
-
-        console.log("History geladen:", historyData.length);
-
-        if (historyData.length > 0) {
-
-            loadTraffic();
-
-            updateCharts();
-
-            updateHeatmap();
-
-            updateHeatmapLden();
-
-            updateHeatmapPM();
-
-            updateWeekSummary();
-
-            updateL271Analyse();
-
-            updateExportPreview();
-
-            updateEnvironmentAnalysis();
-        }
-
-    } catch(e) {
-
-        console.error(e);
-
-    }
 }
 
-// ======================================
-// LIVE DATEN
-// ======================================
+html+=`<div class="heatmap-cell" style="background:${color}">${avg}</div>`;
 
-function loadTraffic() {
-
-    if (!historyData || historyData.length === 0) return;
-
-    const last = historyData[historyData.length - 1];
-
-    if (!last) return;
-
-    document.getElementById("cars_today").textContent =
-        last.cars_today ?? "--";
-
-    document.getElementById("cars_hour").textContent =
-        last.cars_hour ?? "--";
-
-    document.getElementById("noise10").textContent =
-        last.noise10 ?? "--";
-
-    document.getElementById("noise1h").textContent =
-        last.noise1h ?? "--";
-
-    document.getElementById("peak1h").textContent =
-        last.peak1h ?? "--";
-
-    document.getElementById("peak3s").textContent =
-        last.peak3s ?? "--";
-
-    document.getElementById("pm10_value").textContent =
-        last.pm10 ?? "--";
-
-    document.getElementById("pm25_value").textContent =
-        last.pm25 ?? "--";
-
-    document.getElementById("pm10_value2").textContent =
-        last.pm10 ?? "--";
-
-    document.getElementById("pm25_value2").textContent =
-        last.pm25 ?? "--";
-
-    document.getElementById("aqi_value").textContent =
-        last.aqi ?? "--";
-
-    document.getElementById("update_time").textContent =
-        new Date().toLocaleString();
-
-    updateTrafficLight(last);
-
-    updateNoiseStatus(last);
-
-    updatePeakStatus(last);
-
-    updateTrafficIndex(last);
-
-    updateLawCheck(last);
-
-    detectTrafficEvent(last);
-
-    updateAQIStatus(last.aqi);
-
-    document.getElementById("rush_hour").textContent =
-        detectTrafficPhase();
 }
 
-// ======================================
-// AMPEL
-// ======================================
-
-function updateTrafficLight(data) {
-
-    let cars = Number(data.cars_hour) || 0;
-
-    let noise = calculateNoise(data);
-
-    let peak = Number(data.peak1h) || 0;
-
-    let index =
-        (cars * 1.2) +
-        (noise - 40) * 1.8 +
-        (peak - 60) * 0.8;
-
-    index = Math.max(0, Math.min(100, index));
-
-    document.querySelectorAll(".light")
-        .forEach(l => {
-            l.classList.remove(
-                "red",
-                "orange",
-                "yellow",
-                "green"
-            );
-        });
-
-    if (index >= 85) {
-        document.getElementById("light_red")
-            .classList.add("red");
-    }
-    else if (index >= 70) {
-        document.getElementById("light_orange")
-            .classList.add("orange");
-    }
-    else if (index >= 50) {
-        document.getElementById("light_yellow")
-            .classList.add("yellow");
-    }
-    else {
-        document.getElementById("light_green")
-            .classList.add("green");
-    }
 }
 
-// ======================================
-// STATUS
-// ======================================
+document.getElementById("heatmapPMGrid").innerHTML=html;
 
-function updateNoiseStatus(data) {
-
-    let n = calculateNoise(data);
-
-    let text, cls;
-
-    if (n >= 65) {
-        text = "gesundheitsschädlich";
-        cls = "status-critical";
-    }
-    else if (n >= 59) {
-        text = "kritisch";
-        cls = "status-bad";
-    }
-    else if (n >= 53) {
-        text = "erhöht";
-        cls = "status-warn";
-    }
-    else {
-        text = "ruhig";
-        cls = "status-good";
-    }
-
-    document.getElementById("noise_status").innerHTML =
-        `<span class="${cls}">${text}</span>`;
 }
-
-function updatePeakStatus(data) {
-
-    let p = Number(data.peak1h) || 0;
-
-    let text, cls;
-
-    if (p >= 85) {
-        text = "extrem laut";
-        cls = "status-critical";
-    }
-    else if (p >= 75) {
-        text = "sehr laut";
-        cls = "status-bad";
-    }
-    else if (p >= 65) {
-        text = "laut";
-        cls = "status-warn";
-    }
-    else {
-        text = "normal";
-        cls = "status-good";
-    }
-
-    document.getElementById("peak_status").innerHTML =
-        `<span class="${cls}">${text}</span>`;
-}
-
-// ======================================
-// AQI
-// ======================================
-
+    
+    // Funktion Aqi EU Luftverschmutzung--------------
 function updateAQIStatus(aqi) {
 
-    if (aqi === undefined || aqi === null) return;
+    if (aqi === undefined || aqi === null) {
+        document.getElementById("aqi_status").textContent = "--";
+        return;
+    }
 
     let text = "";
     let cls = "";
@@ -1437,87 +1374,78 @@ function updateAQIStatus(aqi) {
         text = "schlecht";
         cls = "status-bad";
     }
-    else {
+    else if (aqi <= 100) {
         text = "sehr schlecht";
+        cls = "status-critical";
+    }
+    else {
+        text = "extrem schlecht";
         cls = "status-critical";
     }
 
     document.getElementById("aqi_status").innerHTML =
         `<span class="${cls}">${text}</span>`;
+}    
+    
+function correlation(x, y) {
+
+    let n = x.length;
+
+    if (n === 0) return 0;
+
+    let avgX = x.reduce((a,b)=>a+b,0)/n;
+    let avgY = y.reduce((a,b)=>a+b,0)/n;
+
+    let num = 0;
+    let denX = 0;
+    let denY = 0;
+
+    for (let i=0;i<n;i++) {
+
+        let dx = x[i]-avgX;
+        let dy = y[i]-avgY;
+
+        num += dx*dy;
+        denX += dx*dx;
+        denY += dy*dy;
+    }
+
+    return num / Math.sqrt(denX*denY);
 }
+    
+// ============================================
+// DASHBOARD FUNKTIONEN
+// ============================================
 
-// ======================================
-// VERKEHRSPHASE
-// ======================================
+// STAU ERKENNUNG
+function detectTrafficJam(data) {
 
-function detectTrafficPhase() {
+    let cars = data.cars_hour || 0;
+    let peak = data.peak || 0;
+    let noise = data.noiseWeighted ?? data.noise1h;
 
-    let now = new Date();
+    let peakDiff = peak - noise;
 
-    let hour = now.getHours();
-
-    let day = now.getDay();
-
-    if (day === 0 || day === 6) {
-
-        if (hour >= 10 && hour <= 18)
-            return "🚗 Wochenendverkehr";
-
-        if (hour >= 22 || hour <= 5)
-            return "🌙 ruhige Nacht";
-
-        return "🙂 moderat";
+    if (cars > 120 && peakDiff < 10) {
+        return "🚗 Stau / Stop-and-Go";
     }
 
-    if (hour >= 6 && hour <= 9)
-        return "🌅 Morgenverkehr";
+    if (cars > 80 && peakDiff < 20) {
+        return "🚙 dichter Verkehr";
+    }
 
-    if (hour >= 16 && hour <= 19)
-        return "🌆 Abendverkehr";
-
-    if (hour >= 22 || hour <= 5)
-        return "🌙 Nachtverkehr";
-
-    return "🚗 Tagesverkehr";
+    return null;
 }
+    
+// ============================================
+// BELASTUNGS-AMPEL
+// ============================================
 
-// ======================================
-// EVENTS
-// ======================================
+function updateTrafficLight(data) {
 
-function detectTrafficEvent(data) {
-
-    let cars = Number(data.cars_hour) || 0;
-
-    let peak3s = Number(data.peak3s) || 0;
-
-    let text = "normal";
-
-    if (peak3s > 90 && cars < 50) {
-        text = "🏎 möglicher Raser";
-    }
-    else if (peak3s > 85) {
-        text = "🚛 schweres Fahrzeug";
-    }
-    else if (cars > 180) {
-        text = "🚗 dichter Verkehr";
-    }
-
-    document.getElementById("traffic_event")
-        .textContent = text;
-}
-
-// ======================================
-// INDEX
-// ======================================
-
-function updateTrafficIndex(data) {
-
-    let cars = Number(data.cars_hour) || 0;
-
-    let noise = calculateNoise(data);
-
-    let peak = Number(data.peak1h) || 0;
+    let cars = data.cars_hour || 0;
+    let noise = data.noiseWeighted ?? data.noise1h ?? 0;
+    let peak = data.peak || 0;
 
     let index =
         (cars * 1.2) +
@@ -1526,212 +1454,730 @@ function updateTrafficIndex(data) {
 
     index = Math.max(0, Math.min(100, index));
 
-    document.getElementById("traffic_index").textContent =
-        Math.round(index) + "/100";
+    document.querySelectorAll(".light").forEach(l => {
+        l.classList.remove("red", "orange", "yellow", "green");
+    });
+
+    // Skala
+    if (index >= 85) {
+        document.getElementById("light_red").classList.add("red");
+    }
+    else if (index >= 70) {
+        document.getElementById("light_orange").classList.add("orange");
+    }
+    else if (index >= 50) {
+        document.getElementById("light_yellow").classList.add("yellow");
+    }
+    else {
+        document.getElementById("light_green").classList.add("green");
+    }
 }
 
-// ======================================
-// GRENZWERTE
-// ======================================
+function updateNoiseStatus(data) {
+    let n = data.noiseWeighted ?? data.noise1h;
+    let text, cls;
+
+    if (n >= 65) { text = "gesundheitsschädlich"; cls = "status-critical"; }
+    else if (n >= 59) { text = "kritisch"; cls = "status-bad"; }
+    else if (n >= 53) { text = "erhöht"; cls = "status-warn"; }
+    else { text = "ruhig"; cls = "status-good"; }
+
+    document.getElementById("noise_status").innerHTML = `<span class="${cls}">${text}</span>`;
+}
+
+function updatePeakStatus(data) {
+    let p = data.peak;
+    let text, cls;
+
+    if (p >= 85) { text = "extrem laut"; cls = "status-critical"; }
+    else if (p >= 75) { text = "sehr laut"; cls = "status-bad"; }
+    else if (p >= 65) { text = "laut"; cls = "status-warn"; }
+    else { text = "normal"; cls = "status-good"; }
+
+    document.getElementById("peak_status").innerHTML = `<span class="${cls}">${text}</span>`;
+}
+
+function updateTrafficAnalysis(data) {
+    let cars = data.cars_hour;
+    let hour = new Date().getHours();
+
+    if (hour >= 22 || hour <= 5) {
+        document.getElementById("night_traffic").textContent =
+            cars > 10 ? "ungewöhnlich hoch" : "normal";
+    } else {
+        document.getElementById("night_traffic").textContent = "Tagbetrieb";
+    }
+}
+// ============================================
+// VERKEHRSPHASE ERKENNEN
+// ============================================
+
+function detectTrafficPhase() {
+
+    let now = new Date();
+    let hour = now.getHours();
+    let day = now.getDay(); // 0 = Sonntag
+
+    // Wochenende
+    if (day === 0 || day === 6) {
+
+        if (hour >= 10 && hour <= 18) return "🚗 Wochenendverkehr";
+        if (hour >= 22 || hour <= 5) return "🌙 ruhige Nacht";
+
+        return "🙂 moderater Verkehr";
+    }
+
+    // Werktage
+    if (hour >= 6 && hour <= 9) return "🌅 Morgenverkehr";
+    if (hour >= 16 && hour <= 19) return "🌆 Abendverkehr";
+    if (hour >= 22 || hour <= 5) return "🌙 Nachtverkehr";
+
+    return "🚗 normaler Tagesverkehr";
+}
+    
+    function detectTrafficEvent(data) {
+
+    let cars = data.cars_hour;
+    let peak = data.peak;
+    let noise = data.noiseWeighted ?? data.noise1h;
+
+    // Stau prüfen 
+    let jam = detectTrafficJam(data);
+    if (jam) {
+    document.getElementById("traffic_event").textContent = jam;
+    return;
+    }
+
+    let text = "normal";
+
+    // möglicher Raser
+    if (peak > 90 && cars < 50) {
+        text = "🏎 möglicher Raser";
+    }
+
+    // möglicher LKW
+    else if (peak > 85 && noise > 65) {
+        text = "🚛 schweres Fahrzeug";
+    }
+
+    // dichter Verkehr / Stau
+    else if (cars > 180) {
+        text = "🚗 dichter Verkehr";
+    }
+
+    document.getElementById("traffic_event").textContent = text;
+}
+    
+function updateTrafficIndex(data) {
+
+    let cars = data.cars_hour;
+    let noise = data.noiseWeighted ?? data.noise1h;
+    let peak = data.peak;
+
+    let index = (cars * 1.2) + (noise - 40) * 1.8 + (peak - 60) * 0.8;
+    index = Math.max(0, Math.min(100, index));
+
+    document.getElementById("traffic_index").textContent = Math.round(index) + "/100";
+
+    let text, cls;
+    if (index < 20) { text = "sehr ruhig"; cls = "status-good"; }
+    else if (index < 40) { text = "moderat"; cls = "status-good"; }
+    else if (index < 60) { text = "erhöht"; cls = "status-warn"; }
+    else if (index < 80) { text = "stark belastet"; cls = "status-bad"; }
+    else { text = "extrem belastet"; cls = "status-critical"; }
+
+    document.getElementById("traffic_index_status").innerHTML = `<span class="${cls}">${text}</span>`;
+}
 
 function updateLawCheck(data) {
 
-    let noise = calculateNoise(data);
+    let noise = data.noiseWeighted ?? data.noise1h;
 
-    let text = "";
-    let cls = "";
+    let text, cls;
 
-    if (noise >= 70) {
-        text = `Gesundheitskritisch (${noise} dB)`;
-        cls = "status-critical";
-    }
-    else if (noise >= 65) {
-        text = `Kritische Belastung (${noise} dB)`;
-        cls = "status-bad";
-    }
-    else if (noise >= 59) {
-        text = `Über Neubau-Grenzwert (${noise} dB)`;
-        cls = "status-bad";
-    }
-    else if (noise >= 53) {
-        text = `Über WHO-Empfehlung (${noise} dB)`;
-        cls = "status-warn";
-    }
-    else {
-        text = `Unter WHO-Empfehlung (${noise} dB)`;
-        cls = "status-good";
-    }
+    if (noise >= 70) { text = `Gesundheitskritisch (${noise} dB)`; cls = "status-critical"; }
+    else if (noise >= 65) { text = `Kritische Belastung (${noise} dB)`; cls = "status-bad"; }
+    else if (noise >= 59) { text = `Über Neubau-Grenzwert (${noise} dB)`; cls = "status-bad"; }
+    else if (noise >= 53) { text = `Über WHO-Empfehlung (${noise} dB)`; cls = "status-warn"; }
+    else { text = `Unter WHO-Empfehlung (${noise} dB)`; cls = "status-good"; }
 
     document.getElementById("law_result").innerHTML =
         `<span class="${cls}">${text}</span>`;
 }
 
-// ======================================
+  function updateEnvironmentAnalysis() {
+
+    if (historyData.length < 10) return;
+
+    let cars = historyData.map(e => e.cars_hour || 0);
+    let noise = historyData.map(e => calculateNoise(e));
+    let pm10 = historyData.map(e => e.pm10 || 0);
+    let pm25 = historyData.map(e => e.pm25 || 0);
+
+    let corrNoise = correlation(cars, noise);
+    let corrPM10 = correlation(cars, pm10);
+    let corrPM25 = correlation(cars, pm25);
+
+    document.getElementById("corr_cars_noise").textContent = corrNoise.toFixed(2);
+    document.getElementById("corr_cars_pm10").textContent = corrPM10.toFixed(2);
+    document.getElementById("corr_cars_pm25").textContent = corrPM25.toFixed(2);
+    // ===============================
+// PM10 Ursachen-Schätzung
+// ===============================
+
+let trafficShare = Math.max(0, corrPM10) * 100;
+
+let pollenToday = historyData[historyData.length - 1]?.pollen || 0;
+let pollenShare = pollenToday * 20;
+
+if (pollenShare > 40) pollenShare = 40;
+
+let backgroundShare = 100 - trafficShare - pollenShare;
+
+trafficShare = Math.max(0, trafficShare);
+backgroundShare = Math.max(0, backgroundShare);
+
+let total = trafficShare + pollenShare + backgroundShare;
+
+trafficShare = Math.round(trafficShare / total * 100);
+pollenShare = Math.round(pollenShare / total * 100);
+backgroundShare = 100 - trafficShare - pollenShare;
+
+document.getElementById("pm_source").innerHTML = `
+🚗 Verkehr: ${trafficShare} %<br>
+🌼 Pollen: ${pollenShare} %<br>
+🌍 Hintergrund: ${backgroundShare} %
+`;
+      
+    let interpretation = "";
+
+    if (corrPM10 > 0.5) {
+        interpretation += "🚗 Verkehr hat starken Einfluss auf PM10.<br>";
+    }
+
+    if (corrNoise > 0.6) {
+        interpretation += "🔊 Verkehr verursacht deutlich erhöhten Lärm.<br>";
+    }
+
+    if (corrPM25 > 0.4) {
+        interpretation += "🌫 Feinstaub PM2.5 steigt mit Verkehrsaufkommen.<br>";
+    }
+
+    if (interpretation === "") {
+        interpretation = "Kein klarer Zusammenhang erkennbar.";
+    }
+
+    document.getElementById("env_interpretation").innerHTML = interpretation;
+}
+// ============================================
 // CHARTS
-// ======================================
+// ============================================
 
 function destroyChart(name) {
-
     if (charts[name]) {
-
         charts[name].destroy();
-
         charts[name] = null;
     }
 }
 
-function getChartOptions(min,max) {
+function updateCharts() {
+    if (historyData.length === 0) return;
 
-    return {
+    let labels = historyData.map(e => e.time);
+    let cars = historyData.map(e => e.cars_hour || 0);
+    let noise = historyData.map(e => calculateNoise(e));
+    let peaks = historyData.map(e => e.peak || 0);
+    let pm25 = historyData.map(e => e.pm25 || 0);
+    let pm10 = historyData.map(e => e.pm10 || 0);
+    let pollen = historyData.map(e => e.pollen || 0);
 
+    // Traffic Chart
+    destroyChart('traffic');
+    charts.traffic = new Chart(document.getElementById("trafficChart"), {
+        type: "line",
+        data: {
+            labels: labels,
+            datasets: [{
+                label: "Autos / Stunde",
+                data: cars,
+                borderColor: "#00ff00",
+                backgroundColor: "rgba(0, 255, 0, 0.1)",
+                fill: true,
+                tension: 0.3
+            }]
+        },
+        options: getChartOptions("Fahrzeuge")
+    });
+
+    // Noise Chart
+    destroyChart('noise');
+    charts.noise = new Chart(document.getElementById("noiseChart"), {
+        type: "line",
+        data: {
+            labels: labels,
+            datasets: [{
+                label: "Ø Lärm (dB)",
+                data: noise,
+                borderColor: "#ffff00",
+                backgroundColor: "rgba(255, 255, 0, 0.1)",
+                fill: true,
+                tension: 0.3
+            }]
+        },
+        options: getChartOptions("dB", 40, 80)
+    });
+
+    // Peak Chart
+    destroyChart('peak');
+    charts.peak = new Chart(document.getElementById("peakChart"), {
+        type: "line",
+        data: {
+            labels: labels,
+            datasets: [{
+                label: "Peak (dB)",
+                data: peaks,
+                borderColor: "#ff4444",
+                backgroundColor: "rgba(255, 68, 68, 0.1)",
+                fill: true,
+                tension: 0.3
+            }]
+        },
+        options: getChartOptions("dB", 50, 100)
+    });
+
+    //PM============================
+    destroyChart('pm25');
+
+    charts.pm25 = new Chart(document.getElementById("pm25Chart"), {
+    type: "line",
+    data: {
+    labels: labels,
+    datasets: [{
+    label: "PM2.5 µg/m³",
+    data: pm25,
+    borderColor: "#00ccff",
+    backgroundColor: "rgba(0,204,255,0.1)",
+    fill: true,
+    tension: 0.3
+}]
+},
+options: {
+
+...getChartOptions("µg/m³",0,80),
+
+plugins: {
+
+annotation: {
+
+annotations: {
+
+who: {
+type: 'line',
+yMin: 5,
+yMax: 5,
+borderColor: 'green',
+borderWidth: 2,
+label: {
+display: true,
+content: 'WHO 5 µg/m³'
+}
+},
+
+eu: {
+type: 'line',
+yMin: 25,
+yMax: 25,
+borderColor: 'orange',
+borderWidth: 2,
+label: {
+display: true,
+content: 'EU 25 µg/m³'
+}
+}
+
+}
+
+}
+
+}
+
+}
+});
+
+    //pm10=========================================
+destroyChart('pm10');
+
+charts.pm10 = new Chart(document.getElementById("pm10Chart"), {
+
+    type: "line",
+
+    data: {
+        labels: labels,
+        datasets: [
+
+            {
+                label: "PM10 µg/m³",
+                data: pm10,
+                borderColor: "#ffcc00",
+                backgroundColor: "rgba(255,204,0,0.1)",
+                fill: true,
+                tension: 0.3,
+                yAxisID: 'y'
+            },
+
+            {
+                label: "Pollenindex",
+                data: pollen,
+                borderColor: "#00ffff",
+                borderDash: [6,6],
+                fill: false,
+                tension: 0.3,
+                yAxisID: 'y1'
+            }
+
+        ]
+    },
+
+    options: {
         responsive: true,
 
+        scales: {
+
+            y: {
+                type: 'linear',
+                position: 'left',
+                suggestedMin: 0,
+                suggestedMax: 120,
+                ticks: { color: "#ffcc00" }
+            },
+
+            y1: {
+                type: 'linear',
+                position: 'right',
+                suggestedMin: 0,
+                suggestedMax: 3,
+                ticks: { color: "#00ffff", stepSize: 1 },
+                grid: { drawOnChartArea: false }
+            }
+
+        },
+
+        plugins: {
+            annotation: {
+                annotations: {
+
+                    who: {
+                        type: 'line',
+                        yMin: 15,
+                        yMax: 15,
+                        borderColor: 'green',
+                        borderWidth: 2,
+                        label: {
+                            display: true,
+                            content: 'WHO 15 µg/m³'
+                        }
+                    },
+
+                    eu: {
+                        type: 'line',
+                        yMin: 45,
+                        yMax: 45,
+                        borderColor: 'red',
+                        borderWidth: 2,
+                        label: {
+                            display: true,
+                            content: 'EU 45 µg/m³'
+                        }
+                    }
+
+                }
+            }
+        }
+    }
+
+});
+    
+    // Daily Chart
+    updateDailyChart();
+    
+    // Week Chart
+    updateWeekChart();
+}
+
+function getChartOptions(label, min, max) {
+    return {
+        responsive: true,
         interaction: {
             intersect: false,
             mode: 'index'
         },
-
         scales: {
-
             x: {
-                ticks: {
-                    color: "#888",
-                    maxTicksLimit: 14
-                },
-                grid: {
-                    color: "#333"
-                }
+                ticks: { color: "#888", maxTicksLimit: 24 },
+                grid: { color: "#333" }
             },
-
             y: {
-                ticks: {
-                    color: "#888"
-                },
-                grid: {
-                    color: "#333"
-                },
+                ticks: { color: "#888" },
+                grid: { color: "#333" },
                 suggestedMin: min,
                 suggestedMax: max
             }
         },
-
         plugins: {
-            legend: {
-                labels: {
-                    color: "#fff"
-                }
-            }
+            legend: { labels: { color: "#fff" } }
         }
     };
 }
 
-function updateCharts() {
+function setDailyRange(days) {
+    dailyRange = days;
+    updateDailyChart();
+}
+    
+function updateDailyChart() {
 
-    if (historyData.length === 0) return;
+    let dailyData = {};
 
-    let labels =
-        historyData.map(e =>
-            `${e.date} ${e.time}`);
+    historyData.forEach(e => {
 
-    let cars =
-        historyData.map(e =>
-            Number(e.cars_hour) || 0);
+        let date = e.date || "Unbekannt";
 
-    let noise =
-        historyData.map(e =>
-            calculateNoise(e));
-
-    let peaks =
-        historyData.map(e =>
-            Number(e.peak1h) || 0);
-
-    let pm10 =
-        historyData.map(e =>
-            Number(e.pm10) || 0);
-
-    let pm25 =
-        historyData.map(e =>
-            Number(e.pm25) || 0);
-
-    destroyChart('traffic');
-
-    charts.traffic = new Chart(
-        document.getElementById("trafficChart"),
-        {
-            type: "line",
-            data: {
-                labels: labels,
-                datasets: [{
-                    label: "Autos / Stunde",
-                    data: cars,
-                    borderColor: "#00ff00",
-                    backgroundColor:
-                        "rgba(0,255,0,0.1)",
-                    fill: true,
-                    tension: 0.3
-                }]
-            },
-            options: getChartOptions(0,250)
+        if (!dailyData[date]) {
+            dailyData[date] = {
+                cars: 0,
+                count: 0
+            };
         }
-    );
 
-    destroyChart('noise');
+        dailyData[date].cars = e.cars_today || 0;
+        dailyData[date].count++;
 
-    charts.noise = new Chart(
-        document.getElementById("noiseChart"),
-        {
-            type: "line",
-            data: {
-                labels: labels,
-                datasets: [{
-                    label: "Lärm dB",
-                    data: noise,
-                    borderColor: "#ffff00",
-                    backgroundColor:
-                        "rgba(255,255,0,0.1)",
-                    fill: true,
-                    tension: 0.3
-                }]
-            },
-            options: getChartOptions(40,80)
-        }
-    );
+    });
 
-    destroyChart('peak');
+    let labels = Object.keys(dailyData);
 
-    charts.peak = new Chart(
-        document.getElementById("peakChart"),
-        {
-            type: "line",
-            data: {
-                labels: labels,
-                datasets: [{
-                    label: "Peak dB",
-                    data: peaks,
-                    borderColor: "#ff0000",
-                    backgroundColor:
-                        "rgba(255,0,0,0.1)",
-                    fill: true,
-                    tension: 0.3
-                }]
-            },
-            options: getChartOptions(50,100)
-        }
-    );
+    labels.sort();
+
+    if (dailyRange !== 9999) {
+        labels = labels.slice(-dailyRange);
+    }
+
+    let values = labels.map(d => dailyData[d].cars);
+
+    destroyChart('daily');
+
+    charts.daily = new Chart(document.getElementById("dailyChart"), {
+
+        type: "bar",
+
+        data: {
+            labels: labels.map(d => formatDate(d)),
+
+            datasets: [{
+                label: "Fahrzeuge gesamt",
+                data: values,
+                backgroundColor: "rgba(0,255,0,0.6)",
+                borderColor: "#00ff00",
+                borderWidth: 2
+            }]
+        },
+
+        options: getChartOptions("Fahrzeuge")
+
+    });
+
 }
 
-// ======================================
-// HEATMAPS
-// ======================================
+function updateWeekChart() {
+    let dailyData = {};
+    
+    historyData.forEach(e => {
+        let date = e.date || "Unbekannt";
+        if (!dailyData[date]) {
+            dailyData[date] = { cars: 0, noise: [], peaks: [] };
+        }
+        dailyData[date].cars = e.cars_today || 0;
+        // gewichteter Lärmwert
+        dailyData[date].noise.push(calculateNoise(e));
+        if (e.peak) dailyData[date].peaks.push(e.peak);
+    });
+
+    let labels = Object.keys(dailyData).slice(-7);
+    let carsData = labels.map(d => dailyData[d].cars);
+    let noiseData = labels.map(d => {
+        let arr = dailyData[d].noise;
+        return arr.length ? (arr.reduce((a,b) => a+b, 0) / arr.length).toFixed(1) : 0;
+    });
+
+    destroyChart('week');
+    charts.week = new Chart(document.getElementById("weekChart"), {
+        type: "bar",
+        data: {
+            labels: labels.map(d => formatDate(d)),
+            datasets: [
+                {
+                    label: "Fahrzeuge",
+                    data: carsData,
+                    backgroundColor: "rgba(0, 255, 0, 0.6)",
+                    yAxisID: 'y'
+                },
+                {
+                    label: "Ø Lärm (dB)",
+                    data: noiseData,
+                    type: 'line',
+                    borderColor: "#ffff00",
+                    backgroundColor: "transparent",
+                    yAxisID: 'y1',
+                    tension: 0.3
+                }
+            ]
+        },
+        options: {
+            responsive: true,
+            scales: {
+                x: {
+                    ticks: { color: "#888" },
+                    grid: { color: "#333" }
+                },
+                y: {
+                    type: 'linear',
+                    position: 'left',
+                    ticks: { color: "#00ff00" },
+                    grid: { color: "#333" }
+                },
+                y1: {
+                    type: 'linear',
+                    position: 'right',
+                    ticks: { color: "#ffff00" },
+                    grid: { display: false },
+                    suggestedMin: 45,
+                    suggestedMax: 75
+                }
+            },
+            plugins: {
+                legend: { labels: { color: "#fff" } }
+            }
+        }
+    });
+}
+
+// ============================================
+// 7-TAGE ÜBERSICHT
+// ============================================
+
+function updateWeekSummary() {
+    let dailyData = {};
+    
+    historyData.forEach(e => {
+        let date = e.date;
+        if (!date) return;
+        if (!dailyData[date]) {
+            dailyData[date] = { cars: 0, noise: [], peaks: [] };
+        }
+        dailyData[date].cars = e.cars_today || 0;
+        // gewichteter Lärmwert
+        dailyData[date].noise.push(calculateNoise(e));
+        if (e.peak) dailyData[date].peaks.push(e.peak);
+    });
+
+    let dates = Object.keys(dailyData).sort().slice(-7);
+    let today = new Date().toISOString().split('T')[0];
+    
+    let html = '';
+    const weekdays = ['So', 'Mo', 'Di', 'Mi', 'Do', 'Fr', 'Sa'];
+
+    dates.forEach(date => {
+        let d = dailyData[date];
+        let avgNoise = d.noise.length ? (d.noise.reduce((a,b) => a+b, 0) / d.noise.length).toFixed(1) : '--';
+        let dateObj = new Date(date);
+        let isToday = date === today;
+
+        html += `
+            <div class="day-card ${isToday ? 'today' : ''}">
+                <div class="day-name">${weekdays[dateObj.getDay()]}</div>
+                <div class="day-date">${formatDate(date)}</div>
+                <div class="day-cars">${d.cars}</div>
+                <div class="day-noise">Ø ${avgNoise} dB</div>
+            </div>
+        `;
+    });
+
+    document.getElementById("weekSummary").innerHTML = html;
+}
+
+// ============================================
+// HEATMAP (7 Tage Durschnitt)
+// ============================================
+
+function updateHeatmap() {
+
+    const weekdays = ['Mo','Di','Mi','Do','Fr','Sa','So'];
+
+    let heatData = {};
+
+    historyData.forEach(e => {
+
+        if (!e.date || !e.time) return;
+
+        let date = new Date(e.date);
+        let weekday = (date.getDay() + 6) % 7; // Montag=0
+        let hour = parseInt(e.time.split(':')[0]);
+
+        let key = `${weekday}_${hour}`;
+
+        if (!heatData[key]) {
+            heatData[key] = {
+                sum: 0,
+                count: 0
+            };
+        }
+
+        let noiseWeighted = calculateNoise(e);
+
+        heatData[key].sum += noiseWeighted;
+        heatData[key].count++;
+
+    });
+
+    let html = '<div class="heatmap-cell heatmap-header"></div>';
+
+    weekdays.forEach(w => {
+        html += `<div class="heatmap-cell heatmap-header">${w}</div>`;
+    });
+
+    for (let hour = 0; hour < 24; hour++) {
+
+        html += `<div class="heatmap-cell heatmap-hour">${hour.toString().padStart(2,'0')}:00</div>`;
+
+        for (let weekday = 0; weekday < 7; weekday++) {
+
+            let key = `${weekday}_${hour}`;
+            let avg = '--';
+            let color = '#222';
+
+            if (heatData[key]) {
+
+                avg = (heatData[key].sum / heatData[key].count).toFixed(0);
+                color = getHeatColor(parseFloat(avg));
+
+            }
+
+            html += `<div class="heatmap-cell" style="background:${color}">${avg}</div>`;
+
+        }
+
+    }
+
+    document.getElementById("heatmapGrid").innerHTML = html;
+
+}
 
 function getHeatColor(db) {
-
     if (db >= 65) return '#ff0000';
     if (db >= 62) return '#ff6600';
     if (db >= 59) return '#ffaa00';
     if (db >= 56) return '#ffff00';
     if (db >= 53) return '#88cc00';
-
     return '#00aa00';
 }
 
@@ -1741,89 +2187,348 @@ function getPMColor(pm){
     if(pm >= 45) return '#ffaa00';
     if(pm >= 30) return '#ffff00';
     if(pm >= 15) return '#88cc00';
-
     return '#00aa00';
+
 }
+//==============HEATMAPLDAN==================
+function updateHeatmapLden() {
 
-// ======================================
-// HEATMAPS UPDATE
-// ======================================
-
-function updateHeatmap(){}
-function updateHeatmapLden(){}
-function updateHeatmapPM(){}
-function updateWeekSummary(){}
-function updateL271Analyse(){}
-function updateEnvironmentAnalysis(){}
-function updateExportPreview(){}
-
-// ======================================
-// EXPORT
-// ======================================
-
-function exportCSV() {
-
-    if (historyData.length === 0) {
-
-        alert("Keine Daten");
-
-        return;
-    }
-
-    let csv =
-"Datum;Uhrzeit;Fahrzeuge/h;Lärm10;Lärm1h;Peak1h;Peak3s;PM10;PM25;AQI\n";
+    const weekdays = ['Mo','Di','Mi','Do','Fr','Sa','So'];
+    let heatData = {};
 
     historyData.forEach(e => {
 
-        csv +=
-`${e.date};${e.time};${e.cars_hour};${e.noise10};${e.noise1h};${e.peak1h};${e.peak3s};${e.pm10};${e.pm25};${e.aqi}\n`;
+        if (!e.date || !e.time) return;
+
+        let date = new Date(e.date);
+        let weekday = (date.getDay() + 6) % 7;
+        let hour = parseInt(e.time.split(':')[0]);
+
+        let key = `${weekday}_${hour}`;
+
+        if (!heatData[key]) {
+            heatData[key] = { sum:0, count:0 };
+        }
+
+        let lden = calculateLdenValue(e);
+
+        heatData[key].sum += lden;
+        heatData[key].count++;
 
     });
 
-    download(
-        csv,
-        "traffic-data.csv",
-        "text/csv"
-    );
+    let html = '<div class="heatmap-cell heatmap-header"></div>';
+
+    weekdays.forEach(w=>{
+        html += `<div class="heatmap-cell heatmap-header">${w}</div>`;
+    });
+
+    for (let hour=0; hour<24; hour++) {
+
+        html += `<div class="heatmap-cell heatmap-hour">${hour.toString().padStart(2,'0')}:00</div>`;
+
+        for (let weekday=0; weekday<7; weekday++) {
+
+            let key = `${weekday}_${hour}`;
+            let avg='--';
+            let color='#222';
+
+            if (heatData[key]) {
+
+                avg = (heatData[key].sum / heatData[key].count).toFixed(0);
+                color = getHeatColor(parseFloat(avg));
+
+            }
+
+            html += `<div class="heatmap-cell" style="background:${color}">${avg}</div>`;
+
+        }
+
+    }
+
+    document.getElementById("heatmapLdenGrid").innerHTML = html;
+
+}    
+// ============================================
+// L271 ANALYSE
+// ============================================
+
+function updateL271Analyse() {
+    if (historyData.length === 0) return;
+
+    // Durchschnittswerte
+    let allNoise = historyData
+    .filter(e => e.noise10 !== undefined && e.noise1h !== undefined)
+    .map(e => calculateNoise(e));
+    
+
+    let allCars = historyData
+    .filter(e => e.cars_hour !== undefined)
+    .map(e => Number(e.cars_hour));
+
+    let allPeaks = historyData
+    .filter(e => e.peak !== undefined)
+    .map(e => Number(e.peak));
+
+    let avgNoise = allNoise.length ? (allNoise.reduce((a,b) => a+b, 0) / allNoise.length).toFixed(1) : '--';
+    let avgCars = allCars.length ? (allCars.reduce((a,b) => a+b, 0) / allCars.length).toFixed(0) : '--';
+
+    document.getElementById("avg7_noise").innerHTML = `${avgNoise} <small>dB</small>`;
+    document.getElementById("avg7_cars").innerHTML = `${avgCars} <small>/h</small>`;
+
+//=======EU DB Werte========
+    let lden = calculateLden(historyData);
+
+    document.getElementById("lden_value").textContent = lden + " dB";
+    let statusText = "--";
+    let statusClass = "";
+
+    if (lden !== null) {
+
+        let v = parseFloat(lden);
+
+        if (v < 53) {
+            statusText = "gut";
+            statusClass = "status-good";
+        }
+        else if (v < 59) {
+            statusText = "erhöht";
+            statusClass = "status-warn";
+        }
+        else if (v < 65) {
+            statusText = "kritisch";
+            statusClass = "status-bad";
+        }
+        else {
+            statusText = "gesundheitskritisch";
+            statusClass = "status-critical";
+        }
+
+}
+
+document.getElementById("lden_status").innerHTML =
+    `<span class="${statusClass}">${statusText}</span>`;
+    
+    
+    // Grenzwertüberschreitungen
+    let total = allNoise.length;
+    let exceedWho = allNoise.filter(n => n >= 53).length;
+    let exceed59 = allNoise.filter(n => n >= 59).length;
+    let exceed65 = allNoise.filter(n => n >= 65).length;
+    let exceed70 = allNoise.filter(n => n >= 70).length;
+
+    document.getElementById("exceed_who").innerHTML = `${exceedWho}/${total} <small>(${(exceedWho/total*100).toFixed(0)}%)</small>`;
+    document.getElementById("exceed_59").innerHTML = `${exceed59}/${total} <small>(${(exceed59/total*100).toFixed(0)}%)</small>`;
+    document.getElementById("exceed_65").innerHTML = `${exceed65}/${total} <small>(${(exceed65/total*100).toFixed(0)}%)</small>`;
+    document.getElementById("exceed_70").innerHTML = `${exceed70}/${total} <small>(${(exceed70/total*100).toFixed(0)}%)</small>`;
+
+    // Spitzenzeiten
+    let maxNoiseEntry = historyData.reduce((max, e) => {
+
+    let noise = calculateNoise(e);
+    let maxNoise = calculateNoise(max || {});
+
+    return noise > maxNoise ? e : max;
+
+    }, null);
+    let maxCarsEntry = historyData.reduce((max, e) => (e.cars_hour > (max?.cars_hour || 0)) ? e : max, null);
+    let maxPeak = allPeaks.length ? Math.max(...allPeaks) : '--';
+
+    document.getElementById("peak_hour").textContent =
+    maxNoiseEntry ? `${maxNoiseEntry.time} (${calculateNoise(maxNoiseEntry).toFixed(1)} dB)` : '--';
+    document.getElementById("max_peak").textContent = maxPeak + ' dB';
+    document.getElementById("busy_hour").textContent = maxCarsEntry ? `${maxCarsEntry.time}` : '--';
+    document.getElementById("max_cars").textContent = maxCarsEntry ? maxCarsEntry.cars_hour : '--';
+
+    // Tag/Nacht Vergleich
+    let dayData = historyData.filter(e => {
+        let h = parseInt(e.time?.split(':')[0]);
+        return h >= 6 && h < 22;
+    });
+    let nightData = historyData.filter(e => {
+        let h = parseInt(e.time?.split(':')[0]);
+        return h < 6 || h >= 22;
+    });
+
+    let dayNoise = dayData.map(e => calculateNoise(e));
+    let nightNoise = nightData.map(e => calculateNoise(e));
+    let dayCars = dayData.filter(e => e.cars_hour !== undefined).map(e => e.cars_hour);
+    let nightCars = nightData.filter(e => e.cars_hour !== undefined).map(e => e.cars_hour);
+
+    document.getElementById("day_noise").textContent = dayNoise.length ? (dayNoise.reduce((a,b) => a+b, 0) / dayNoise.length).toFixed(1) + ' dB' : '--';
+    document.getElementById("night_noise").textContent = nightNoise.length ? (nightNoise.reduce((a,b) => a+b, 0) / nightNoise.length).toFixed(1) + ' dB' : '--';
+    document.getElementById("day_cars").textContent = dayCars.length ? (dayCars.reduce((a,b) => a+b, 0) / dayCars.length).toFixed(0) + '/h' : '--';
+    document.getElementById("night_cars").textContent = nightCars.length ? (nightCars.reduce((a,b) => a+b, 0) / nightCars.length).toFixed(0) + '/h' : '--';
+
+    // Bewertung
+    let assessment = '';
+    let avgN = parseFloat(avgNoise);
+    
+    if (avgN >= 65) {
+        assessment = '<span class="status-critical">⚠️ Kritische Dauerbelastung! Der Durchschnittspegel überschreitet die Grenze für Lärmsanierung. Gesundheitliche Beeinträchtigungen sind wahrscheinlich.</span>';
+    } else if (avgN >= 59) {
+        assessment = '<span class="status-bad">🔴 Erhöhte Belastung. Der Grenzwert für Neubauten wird regelmäßig überschritten. Lärmschutzmaßnahmen empfohlen.</span>';
+    } else if (avgN >= 53) {
+        assessment = '<span class="status-warn">🟡 Moderate Belastung. WHO-Empfehlung wird überschritten. Langfristige Belästigung möglich.</span>';
+    } else {
+        assessment = '<span class="status-good">🟢 Akzeptable Lärmbelastung. Werte liegen im WHO-Empfehlungsbereich.</span>';
+    }
+
+    document.getElementById("assessment").innerHTML = assessment;
+
+    // Trend (letzte 24h vs. vorherige 24h)
+    // letzte 24h (144 Einträge)
+    if (historyData.length < 288) return;
+    let newer = historyData.slice(-144);
+
+    // vorherige 24h
+    let older = historyData.slice(-288, -144);
+
+    let olderNoise = older.map(e => calculateNoise(e));
+    let newerNoise = newer.map(e => calculateNoise(e));
+    
+    let olderCars = older.filter(e => e.cars_hour !== undefined).map(e => e.cars_hour);
+    let newerCars = newer.filter(e => e.cars_hour !== undefined).map(e => e.cars_hour);
+
+    let avgOlderNoise = olderNoise.length ? olderNoise.reduce((a,b) => a+b, 0) / olderNoise.length : 0;
+    let avgNewerNoise = newerNoise.length ? newerNoise.reduce((a,b) => a+b, 0) / newerNoise.length : 0;
+    let avgOlderCars = olderCars.length ? olderCars.reduce((a,b) => a+b, 0) / olderCars.length : 0;
+    let avgNewerCars = newerCars.length ? newerCars.reduce((a,b) => a+b, 0) / newerCars.length : 0;
+
+    let noiseDiff = avgNewerNoise - avgOlderNoise;
+    let carsDiff = avgNewerCars - avgOlderCars;
+
+    document.getElementById("noise_trend").innerHTML = formatTrend(noiseDiff, 'dB');
+    document.getElementById("traffic_trend").innerHTML = formatTrend(carsDiff, '/h');
+}
+
+function formatTrend(diff, unit) {
+    if (Math.abs(diff) < 0.5) return '<span class="status-good">→ stabil</span>';
+    if (diff > 0) return `<span class="status-bad">↑ +${diff.toFixed(1)} ${unit}</span>`;
+    return `<span class="status-good">↓ ${diff.toFixed(1)} ${unit}</span>`;
+}
+
+// ============================================
+// EXPORT
+// ============================================
+
+function updateExportPreview() {
+    document.getElementById("export_count").textContent = historyData.length;
+    
+    if (historyData.length > 0) {
+        let first = historyData[0];
+        let last = historyData[historyData.length - 1];
+        document.getElementById("export_range").textContent = 
+            `${first.date} ${first.time} – ${last.date} ${last.time}`;
+    }
+
+    let preview = historyData.slice(-5);
+    document.getElementById("export_preview").textContent = JSON.stringify(preview, null, 2);
+}
+
+function exportCSV() {
+    if (historyData.length === 0) {
+        alert("Keine Daten vorhanden");
+        return;
+    }
+
+    let csv = "Datum;Uhrzeit;Fahrzeuge/h;Lärm 10min;Lärm 1h;Peak\n";
+    historyData.forEach(e => {
+        csv += `${e.date};${e.time};${e.cars_hour};${e.noise10};${e.noise1h};${e.peak}\n`;
+    });
+
+    download(csv, "traffic-data.csv", "text/csv");
 }
 
 function exportJSON() {
+    if (historyData.length === 0) {
+        alert("Keine Daten vorhanden");
+        return;
+    }
 
-    download(
-        JSON.stringify(historyData,null,2),
-        "traffic-data.json",
-        "application/json"
-    );
+    download(JSON.stringify(historyData, null, 2), "traffic-data.json", "application/json");
+}
+
+function exportAnalyse() {
+    let allNoise = historyData.filter(e => e.noise1h).map(e => e.noise1h);
+    let allCars = historyData.filter(e => e.cars_hour !== undefined).map(e => e.cars_hour);
+    
+    let avgNoise = allNoise.length ? (allNoise.reduce((a,b) => a+b, 0) / allNoise.length).toFixed(1) : '--';
+    let avgCars = allCars.length ? (allCars.reduce((a,b) => a+b, 0) / allCars.length).toFixed(0) : '--';
+    let maxPeak = historyData.filter(e => e.peak).map(e => e.peak);
+    
+    let total = allNoise.length;
+    let exceedWho = allNoise.filter(n => n > 53).length;
+    let exceed59 = allNoise.filter(n => n > 59).length;
+    let exceed65 = allNoise.filter(n => n > 65).length;
+
+    let report = `
+L271 VERKEHRSANALYSE - VÖLKLINGEN
+=================================
+Erstellt: ${new Date().toLocaleString()}
+Datenpunkte: ${historyData.length}
+Zeitraum: ${historyData[0]?.date} ${historyData[0]?.time} - ${historyData[historyData.length-1]?.date} ${historyData[historyData.length-1]?.time}
+
+DURCHSCHNITTSWERTE
+------------------
+Ø Lärmpegel: ${avgNoise} dB
+Ø Fahrzeuge: ${avgCars} pro Stunde
+Max. Peak: ${maxPeak.length ? Math.max(...maxPeak) : '--'} dB
+
+GRENZWERTÜBERSCHREITUNGEN
+-------------------------
+> 53 dB (WHO): ${exceedWho}/${total} (${(exceedWho/total*100).toFixed(1)}%)
+> 59 dB (Neubau): ${exceed59}/${total} (${(exceed59/total*100).toFixed(1)}%)
+> 65 dB (Kritisch): ${exceed65}/${total} (${(exceed65/total*100).toFixed(1)}%)
+
+BEWERTUNG
+---------
+${parseFloat(avgNoise) >= 65 ? 'KRITISCH: Dauerbelastung überschreitet Sanierungsgrenze!' : 
+  parseFloat(avgNoise) >= 59 ? 'ERHÖHT: Neubau-Grenzwert wird überschritten.' :
+  parseFloat(avgNoise) >= 53 ? 'MODERAT: WHO-Empfehlung wird überschritten.' :
+  'AKZEPTABEL: Werte im Normalbereich.'}
+`;
+
+    download(report, "L271-Analyse.txt", "text/plain");
 }
 
 function download(content, filename, type) {
-
-    let blob =
-        new Blob([content], { type: type });
-
-    let url =
-        URL.createObjectURL(blob);
-
-    let a =
-        document.createElement('a');
-
+    let blob = new Blob([content], { type: type });
+    let url = URL.createObjectURL(blob);
+    let a = document.createElement('a');
     a.href = url;
-
     a.download = filename;
-
     a.click();
-
     URL.revokeObjectURL(url);
 }
 
-// ======================================
-// START
-// ======================================
+// ============================================
+// HILFSFUNKTIONEN
+// ============================================
 
-loadHistory();
+function formatDate(dateStr) {
+    if (!dateStr) return '--';
+    let parts = dateStr.split('-');
+    if (parts.length === 3) {
+        return `${parts[2]}.${parts[1]}`;
+    }
+    return dateStr;
+}
 
-setInterval(loadTraffic, 300000);
+// ============================================
+// INITIALISIERUNG
+// ============================================
 
-setInterval(loadHistory, 1800000);
+loadHistory().then(() => {
+    loadTraffic();
+});
+
+// Auto-Update alle 60 Sekunden
+setInterval(loadTraffic, 60000);
+setInterval(loadHistory, 300000);
 
 </script>
+
+</body>
+
+</html>
