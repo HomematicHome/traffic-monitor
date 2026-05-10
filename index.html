@@ -1079,7 +1079,7 @@ function calculateNoise(data) {
 
     const noise10 = Number(data.noise10) || 0;
     const noise1h = Number(data.noise1h) || 0;
-    const peak = Number(data.peak) || 0;
+    const peak = getPeak(data);
 
     return Math.round(
         (
@@ -1146,7 +1146,7 @@ async function loadTraffic() {
         document.getElementById("noise10").textContent = last.noise10 ?? "--";
         document.getElementById("noise1h").textContent = last.noise1h ?? "--";
 
-        document.getElementById("peak1h").textContent = last.peak ?? "--";
+        document.getElementById("peak1h").textContent = getPeak(last) ?? "--";
         document.getElementById("peak3s").textContent = last.peak3s ?? "--";
 
         // Luftqualität
@@ -1495,7 +1495,7 @@ function correlation(x, y) {
 function detectTrafficJam(data) {
 
     let cars = data.cars_hour || 0;
-    let peak = data.peak || 0;
+    let peak = getPeak(data);
     let noise = data.noiseWeighted ?? data.noise1h;
 
     let peakDiff = peak - noise;
@@ -1519,7 +1519,7 @@ function updateTrafficLight(data) {
 
     let cars = data.cars_hour || 0;
     let noise = data.noiseWeighted ?? data.noise1h ?? 0;
-    let peak = data.peak || 0;
+    let peak = getPeak(data);
 
     let index =
         (cars * 1.2) +
@@ -1560,7 +1560,7 @@ function updateNoiseStatus(data) {
 }
 
 function updatePeakStatus(data) {
-    let p = data.peak;
+    let p = getPeak(data);
     let text, cls;
 
     if (p >= 85) { text = "extrem laut"; cls = "status-critical"; }
@@ -1612,7 +1612,7 @@ function detectTrafficPhase() {
     function detectTrafficEvent(data) {
 
     let cars = data.cars_hour;
-    let peak = data.peak;
+    let peak = getPeak(data);
     let noise = data.noiseWeighted ?? data.noise1h;
 
     // Stau prüfen 
@@ -1646,7 +1646,7 @@ function updateTrafficIndex(data) {
 
     let cars = data.cars_hour;
     let noise = data.noiseWeighted ?? data.noise1h;
-    let peak = data.peak;
+    let peak = getPeak(data);
 
     let index = (cars * 1.2) + (noise - 40) * 1.8 + (peak - 60) * 0.8;
     index = Math.max(0, Math.min(100, index));
@@ -1760,7 +1760,7 @@ function updateCharts() {
     let labels = historyData.map(e => e.time);
     let cars = historyData.map(e => e.cars_hour || 0);
     let noise = historyData.map(e => calculateNoise(e));
-    let peaks = historyData.map(e => e.peak || 0);
+    let peaks = historyData.map(e => getPeak(e));
     let pm25 = historyData.map(e => e.pm25 || 0);
     let pm10 = historyData.map(e => e.pm10 || 0);
     let pollen = historyData.map(e => e.pollen || 0);
