@@ -1173,14 +1173,42 @@ async function loadHistory() {
 
         historyData = [];
 
-        let r = await fetch("traffic/test.json?" + Date.now());
+        // index laden
+        let idx = await fetch("traffic/index.json?" + Date.now());
 
-        if (r.ok) {
+        if (!idx.ok) {
+            console.error("index.json fehlt");
+            return;
+        }
 
-            let data = await r.json();
+        let files = await idx.json();
 
-            if (Array.isArray(data)) {
-                historyData = data;
+        // sortieren
+        files.sort();
+
+        // jede Datei laden
+        for (let file of files) {
+
+            try {
+
+                let r = await fetch("traffic/" + file + "?" + Date.now());
+
+                if (!r.ok) continue;
+
+                let data = await r.json();
+
+                // einzelobjekt
+                if (!Array.isArray(data)) {
+                    historyData.push(data);
+                }
+
+                // arraydatei
+                else {
+                    historyData.push(...data);
+                }
+
+            } catch(e) {
+                console.error("Dateifehler:", file, e);
             }
 
         }
