@@ -1173,42 +1173,16 @@ async function loadHistory() {
 
         historyData = [];
 
-        // index laden
-        let idx = await fetch("traffic/index.json?" + Date.now());
+        let r = await fetch("traffic/2026-05-10_16-00.json?" + Date.now());
 
-        if (!idx.ok) {
-            console.error("index.json fehlt");
-            return;
-        }
+        if (r.ok) {
 
-        let files = await idx.json();
+            let data = await r.json();
 
-        // sortieren
-        files.sort();
-
-        // jede Datei laden
-        for (let file of files) {
-
-            try {
-
-                let r = await fetch("traffic/" + file + "?" + Date.now());
-
-                if (!r.ok) continue;
-
-                let data = await r.json();
-
-                // einzelobjekt
-                if (!Array.isArray(data)) {
-                    historyData.push(data);
-                }
-
-                // arraydatei
-                else {
-                    historyData.push(...data);
-                }
-
-            } catch(e) {
-                console.error("Dateifehler:", file, e);
+            if (Array.isArray(data)) {
+                historyData = data;
+            } else {
+                historyData = [data];
             }
 
         }
