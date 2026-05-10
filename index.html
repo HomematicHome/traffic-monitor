@@ -1173,48 +1173,31 @@ async function loadHistory() {
 
         historyData = [];
 
-      // letzte 7 Tage laden
-let dates = [];
+        // 🔥 GitHub API → alle Dateien im /traffic Ordner holen
+        let res = await fetch("https://api.github.com/repos/HomematicHome/traffic-monitor/contents/traffic");
+        let files = await res.json();
 
-for (let i = 0; i < 7; i++) {
+        // 🔥 sort + filter
+        files = files
+          .filter(f => f.name.endsWith(".json"))
+          .sort((a, b) => b.name.localeCompare(a.name));
 
-    let d = new Date();
+        for (let f of files) {
 
-    d.setDate(d.getDate() - i);
+        let r = await fetch(f.download_url + "?" + Date.now());
 
-    let dateStr =
-        d.toISOString().split('T')[0];
+        if (r.ok) {
 
-    dates.push(dateStr);
-}
+            let data = await r.json();
 
-// exakt 7 Dateien laden
-for (let date of dates) {
-
-    let url =
-        `https://raw.githubusercontent.com/HomematicHome/traffic-monitor/main/traffic/${date}.json`;
-
-    try {
-
-        let r = await fetch(url + "?" + Date.now());
-
-        if (!r.ok) continue;
-
-        let data = await r.json();
-
-        if (Array.isArray(data)) {
-
+            if (Array.isArray(data)) {
             historyData.push(...data);
+            } else {
+            historyData.push(data);
+            }
 
         }
-
-    } catch(e) {
-
-        console.log("Datei fehlt:", date);
-
     }
-
-}
 
     // 🔥 GANZ WICHTIG
     historyData.sort((a, b) => {
