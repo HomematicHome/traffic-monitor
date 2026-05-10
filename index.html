@@ -1615,6 +1615,20 @@ function detectTrafficPhase() {
     let peak = getPeak(data);
     let noise = data.noiseWeighted ?? data.noise1h;
 
+    // Mögliches Wetterereignis erkennen
+
+    if (
+    peak > 88 &&
+    Number(data.noise10) >
+    Number(data.noise1h) + 4
+) {
+
+    document.getElementById("traffic_event").textContent =
+        "⛈ mögliches Wetterereignis";
+
+    return;
+}
+
     // Stau prüfen 
     let jam = detectTrafficJam(data);
     if (jam) {
