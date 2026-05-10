@@ -1058,7 +1058,19 @@ let historyData = [];
 let currentTraffic = {};
 
 let dailyRange = 7;
+// ============================================
+// PEAK HELPER
+// ============================================
 
+function getPeak(entry) {
+
+    return Number(
+        entry.peak ??
+        entry.peak1h ??
+        0
+    );
+
+}
 // ============================================
 // ZENTRALE LÄRMBERECHNUNG
 // ============================================
