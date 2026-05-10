@@ -1173,31 +1173,88 @@ async function loadHistory() {
 
         historyData = [];
 
-        let r = await fetch("traffic/2026-05-10_16-00.json?" + Date.now());
+        // INDEX LADEN
+        let idx = await fetch("traffic/index.json?" + Date.now());
 
-        if (r.ok) {
+        if (!idx.ok) {
 
-            let data = await r.json();
+            console.error("index.json fehlt");
+            return;
 
-            if (Array.isArray(data)) {
-                historyData = data;
-            } else {
-                historyData = [data];
+        }
+
+        // DATEILISTE
+        let files = await idx.json();
+
+        if (!Array.isArray(files)) {
+
+            console.error("index.json ungültig");
+            return;
+
+        }
+
+        // SORTIEREN
+        files.sort();
+
+        console.log("Dateien gefunden:", files.length);
+
+        // JEDE DATEI LADEN
+        for (let file of files) {
+
+            try {
+
+                let r = await fetch("traffic/" + file + "?" + Date.now());
+
+                if (!r.ok) {
+
+                    console.warn("Datei fehlt:", file);
+                    continue;
+
+                }
+
+                let data = await r.json();
+
+                // EINZELOBJEKT
+                if (!Array.isArray(data)) {
+
+                    historyData.push(data);
+
+                }
+
+                // ARRAYDATEI
+                else {
+
+                    historyData.push(...data);
+
+                }
+
+            } catch(e) {
+
+                console.error("Dateifehler:", file, e);
+
             }
 
         }
 
         console.log("History geladen:", historyData.length);
 
+        // DASHBOARD UPDATE
         if (historyData.length > 0) {
 
             updateCharts();
+
             updateHeatmap();
+
             updateHeatmapLden();
+
             updateHeatmapPM();
+
             updateWeekSummary();
+
             updateL271Analyse();
+
             updateExportPreview();
+
             updateEnvironmentAnalysis();
 
         }
