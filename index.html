@@ -1317,26 +1317,22 @@ async function loadHistory() {
 
         });
 
-        // DASHBOARD UPDATE
-        if (historyData.length > 0) {
+// DASHBOARD UPDATE
+if (historyData.length > 0) {
 
-            updateCharts();
+    updateWeekSummary();
 
-            updateWeekSummary();
+    updateL271Analyse();
 
-            updateL271Analyse();
+    updateExportPreview();
 
-            updateExportPreview();
+    updateEnvironmentAnalysis();
 
-            updateEnvironmentAnalysis();
+}
 
-        }
+} catch(e) {
 
-    } catch(e) {
-
-        console.error("History Fehler:", e);
-
-    }
+    console.error("History Fehler:", e);
 
 }
 // EU Lärm Berechnen======================
