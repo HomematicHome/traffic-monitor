@@ -1131,17 +1131,41 @@ function showPage(page) {
 
     // Heatmaps erst laden wenn geöffnet
 
-    if (page === "heatmap") {
-        updateHeatmap();
-    }
+   if (page === "traffic") {
+    updateCharts();
+}
 
-    if (page === "heatmap_lden") {
-        updateHeatmapLden();
-    }
+if (page === "noise") {
+    updateCharts();
+}
 
-    if (page === "heatmap_pm") {
-        updateHeatmapPM();
-    }
+if (page === "peak") {
+    updateCharts();
+}
+
+if (page === "daily") {
+    updateCharts();
+}
+
+if (page === "week") {
+    updateCharts();
+}
+
+if (page === "air") {
+    updateCharts();
+}
+
+if (page === "heatmap") {
+    updateHeatmap();
+}
+
+if (page === "heatmap_lden") {
+    updateHeatmapLden();
+}
+
+if (page === "heatmap_pm") {
+    updateHeatmapPM();
+}
 
 }
 
