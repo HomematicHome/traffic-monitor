@@ -1880,23 +1880,55 @@ document.getElementById("pm_source").innerHTML = `
 🌍 Hintergrund: ${backgroundShare} %
 `;
       
+   // Umnweltanalyse===Interpretation====
+
     let interpretation = "";
 
-    if (corrPM10 > 0.5) {
-        interpretation += "🚗 Verkehr hat starken Einfluss auf PM10.<br>";
-    }
+if (corrNoise >= 0.5) {
+    interpretation += "🔊 Starker Zusammenhang zwischen Verkehr und Lärm.<br>";
+}
+else if (corrNoise >= 0.25) {
+    interpretation += "🔊 Verkehr beeinflusst den Lärm messbar.<br>";
+}
+else {
+    interpretation += "🔊 Lärm wird auch durch andere Quellen beeinflusst.<br>";
+}
 
-    if (corrNoise > 0.6) {
-        interpretation += "🔊 Verkehr verursacht deutlich erhöhten Lärm.<br>";
-    }
+if (corrPM10 >= 0.3) {
+    interpretation += "🌫 Verkehr trägt deutlich zur PM10-Belastung bei.<br>";
+}
+else if (corrPM10 >= 0.1) {
+    interpretation += "🌫 Leichter Einfluss des Verkehrs auf PM10 erkennbar.<br>";
+}
+else {
+    interpretation += "🌫 PM10 wird überwiegend durch Hintergrundbelastung beeinflusst.<br>";
+}
 
-    if (corrPM25 > 0.4) {
-        interpretation += "🌫 Feinstaub PM2.5 steigt mit Verkehrsaufkommen.<br>";
-    }
+if (corrPM25 >= 0.2) {
+    interpretation += "🌫 PM2.5 steigt teilweise mit dem Verkehrsaufkommen.<br>";
+}
+else {
+    interpretation += "🌫 PM2.5 zeigt aktuell keinen klaren Verkehrsbezug.<br>";
+}
 
-    if (interpretation === "") {
-        interpretation = "Kein klarer Zusammenhang erkennbar.";
-    }
+// Rush Hour Analyse
+let rushData = historyData.filter(e => {
+    let h = parseInt(e.time?.split(":")[0]);
+    return h >= 6 && h <= 9;
+});
+
+let rushPM = rushData
+    .filter(e => e.pm10 !== undefined)
+    .map(e => Number(e.pm10));
+
+if (rushPM.length > 0) {
+
+    let avgRushPM =
+        rushPM.reduce((a,b)=>a+b,0) / rushPM.length;
+
+    interpretation += `<br>🚗 Morgenverkehr PM10 Ø: ${avgRushPM.toFixed(1)} µg/m³`;
+}
+
 
     document.getElementById("env_interpretation").innerHTML = interpretation;
 }
