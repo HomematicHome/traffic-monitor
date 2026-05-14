@@ -1810,8 +1810,19 @@ function destroyChart(name) {
         charts[name] = null;
     }
 }
-
+    
+// Update Chart================
 function updateCharts() {
+
+    if (
+    charts.traffic &&
+    charts.noise &&
+    charts.peak &&
+    charts.daily &&
+    charts.week
+) {
+    return;
+}
     if (historyData.length === 0) return;
 
     let labels = historyData.map(e => e.time);
