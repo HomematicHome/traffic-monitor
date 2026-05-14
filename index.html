@@ -1603,7 +1603,13 @@ function correlation(x, y) {
         denY += dy*dy;
     }
 
-    return num / Math.sqrt(denX*denY);
+    let den = Math.sqrt(denX * denY);
+
+if (den === 0 || isNaN(den)) {
+    return 0;
+}
+
+return num / den;
 }
     
 // ============================================
@@ -1816,14 +1822,32 @@ function updateLawCheck(data) {
 
     if (historyData.length < 10) return;
 
-    let cars = historyData.map(e => e.cars_hour || 0);
-    let noise = historyData.map(e => calculateNoise(e));
-    let pm10 = historyData.map(e => e.pm10 || 0);
-    let pm25 = historyData.map(e => e.pm25 || 0);
+let validNoise = historyData.filter(e =>
+    e.cars_hour !== undefined
+);
 
-    let corrNoise = correlation(cars, noise);
-    let corrPM10 = correlation(cars, pm10);
-    let corrPM25 = correlation(cars, pm25);
+let carsNoise = validNoise.map(e => Number(e.cars_hour));
+let noise = validNoise.map(e => calculateNoise(e));
+
+let validPM10 = historyData.filter(e =>
+    e.cars_hour !== undefined &&
+    e.pm10 !== undefined
+);
+
+let carsPM10 = validPM10.map(e => Number(e.cars_hour));
+let pm10 = validPM10.map(e => Number(e.pm10));
+
+let validPM25 = historyData.filter(e =>
+    e.cars_hour !== undefined &&
+    e.pm25 !== undefined
+);
+
+    let carsPM25 = validPM25.map(e => Number(e.cars_hour));
+    let pm25 = validPM25.map(e => Number(e.pm25));
+
+    let corrNoise = correlation(carsNoise, noise);
+    let corrPM10 = correlation(carsPM10, pm10);
+    let corrPM25 = correlation(carsPM25, pm25);
 
     document.getElementById("corr_cars_noise").textContent = corrNoise.toFixed(2);
     document.getElementById("corr_cars_pm10").textContent = corrPM10.toFixed(2);
