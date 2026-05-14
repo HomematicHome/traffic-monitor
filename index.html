@@ -2007,30 +2007,53 @@ content: 'EU 45 µg/m³'
     updateWeekChart();
 }
 
+// CHarts Optionen ===============
 function getChartOptions(label, min, max) {
+
     return {
+
         responsive: true,
         animation: false,
+
         interaction: {
             intersect: false,
             mode: 'index'
         },
+
         scales: {
+
             x: {
                 ticks: { color: "#888", maxTicksLimit: 24 },
                 grid: { color: "#333" }
             },
+
             y: {
                 ticks: { color: "#888" },
                 grid: { color: "#333" },
                 suggestedMin: min,
                 suggestedMax: max
             }
+
         },
+
         plugins: {
-            legend: { labels: { color: "#fff" } }
+
+            decimation: {
+                enabled: true,
+                algorithm: 'lttb',
+                samples: 200
+            },
+
+            legend: {
+                labels: {
+                    color: "#fff"
+                }
+            }
+
         }
+
     };
+
 }
 
 function setDailyRange(days) {
