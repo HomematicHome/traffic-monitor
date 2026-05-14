@@ -1225,15 +1225,46 @@ async function loadTraffic() {
     }
 }
 //
-
 async function loadHistory() {
 
     try {
 
+        // CACHE PRÜFEN
+        let cached =
+            localStorage.getItem("trafficHistory");
+
+        let cacheTime =
+            localStorage.getItem("trafficCacheTime");
+
+        // 5 Minuten gültig
+        if (
+            cached &&
+            cacheTime &&
+            (Date.now() - cacheTime < 300000)
+        ) {
+
+            historyData = JSON.parse(cached);
+
+            console.log(
+                "Cache geladen:",
+                historyData.length
+            );
+
+            updateWeekSummary();
+            updateL271Analyse();
+            updateExportPreview();
+            updateEnvironmentAnalysis();
+
+            return;
+
+        }
+
         historyData = [];
 
         // INDEX LADEN
-        let idx = await fetch("traffic/index.json?" + Date.now());
+        let idx = await fetch(
+            "traffic/index.json"
+        );
 
         if (!idx.ok) {
 
@@ -1266,70 +1297,91 @@ async function loadHistory() {
         console.log("Dateien gefunden:", files.length);
 
         // JEDE DATEI LADEN
-        for (let file of files) {
+        await Promise.all(
 
-            try {
+    files.map(async file => {
 
-                let r = await fetch("traffic/" + file + "?" + Date.now());
+        try {
 
-                if (!r.ok) {
+            let r = await fetch(
+                "traffic/" + file
+            );
 
-                    console.warn("Datei fehlt:", file);
-                    continue;
+            if (!r.ok) {
+
+                console.warn(
+                    "Datei fehlt:",
+                    file
+                );
+
+                return;
+
+            }
+
+            let data = await r.json();
+
+            // EINZELOBJEKT
+            if (!Array.isArray(data)) {
+
+                if (data.ts && !data.date) {
+
+                    let parts = data.ts.split(" ");
+
+                    data.date = parts[0];
+
+                    if (parts[1]) {
+
+                        data.time =
+                            parts[1].substring(0,5);
+
+                    }
 
                 }
 
-                let data = await r.json();
+                historyData.push(data);
 
-                // EINZELOBJEKT
-                if (!Array.isArray(data)) {
+            }
 
-                    if (data.ts && !data.date) {
+            // ARRAYDATEI
+            else {
 
-                        let parts = data.ts.split(" ");
+                data.forEach(entry => {
 
-                        data.date = parts[0];
+                    if (entry.ts && !entry.date) {
+
+                        let parts =
+                            entry.ts.split(" ");
+
+                        entry.date = parts[0];
 
                         if (parts[1]) {
-                            data.time = parts[1].substring(0,5);
+
+                            entry.time =
+                                parts[1].substring(0,5);
+
                         }
 
                     }
 
-                    historyData.push(data);
+                });
 
-                }
-
-                // ARRAYDATEI
-                else {
-
-                    data.forEach(entry => {
-
-                        if (entry.ts && !entry.date) {
-
-                            let parts = entry.ts.split(" ");
-
-                            entry.date = parts[0];
-
-                            if (parts[1]) {
-                                entry.time = parts[1].substring(0,5);
-                            }
-
-                        }
-
-                    });
-
-                    historyData.push(...data);
-
-                }
-
-            } catch(e) {
-
-                console.error("Dateifehler:", file, e);
+                historyData.push(...data);
 
             }
 
+        } catch(e) {
+
+            console.error(
+                "Dateifehler:",
+                file,
+                e
+            );
+
         }
+
+    })
+
+);
 
         console.log("History geladen:", historyData.length);
 
