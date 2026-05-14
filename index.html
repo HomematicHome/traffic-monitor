@@ -2754,7 +2754,11 @@ function formatDate(dateStr) {
 // ============================================
 
 loadHistory().then(() => {
+
     loadTraffic();
+
+    updateCharts();
+
 });
 
 // Dashboard Update alle 60 Sekunden
