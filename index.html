@@ -1208,6 +1208,14 @@ async function loadHistory() {
         // SORTIEREN
         files.sort();
 
+        const cutoff = new Date();
+        cutoff.setDate(cutoff.getDate() - 7);
+
+        files = files.filter(f => {
+            const fileDate = f.substring(0, 10);
+            return new Date(fileDate) >= cutoff;
+        });
+
         console.log("Dateien gefunden:", files.length);
 
         // JEDE DATEI LADEN
