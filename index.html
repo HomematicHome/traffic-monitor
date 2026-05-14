@@ -1386,14 +1386,34 @@ async function loadHistory() {
         console.log("History geladen:", historyData.length);
 
         // NACH ZEIT SORTIEREN
-        historyData.sort((a,b) => {
+       historyData.sort((a,b) => {
 
-            let ta = new Date(a.ts || (a.date + " " + a.time));
-            let tb = new Date(b.ts || (b.date + " " + b.time));
+    let ta = new Date(
+        a.ts || (a.date + " " + a.time)
+    );
 
-            return ta - tb;
+    let tb = new Date(
+        b.ts || (b.date + " " + b.time)
+    );
 
-        });
+    return ta - tb;
+
+});
+
+localStorage.setItem(
+    "trafficHistory",
+    JSON.stringify(historyData)
+);
+
+localStorage.setItem(
+    "trafficCacheTime",
+    Date.now()
+);
+
+console.log(
+    "History geladen:",
+    historyData.length
+);
 
 // DASHBOARD UPDATE
 if (historyData.length > 0) {
