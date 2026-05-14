@@ -1822,6 +1822,8 @@ function updateLawCheck(data) {
 
     if (historyData.length < 10) return;
 
+    let analysisPeriod = "letzte 7 Tage";
+
 let validNoise = historyData.filter(e =>
     e.cars_hour !== undefined
 );
@@ -1929,7 +1931,36 @@ if (rushPM.length > 0) {
     interpretation += `<br>🚗 Morgenverkehr PM10 Ø: ${avgRushPM.toFixed(1)} µg/m³`;
 }
 
+let avgNoise =
+    noise.reduce((a,b)=>a+b,0) / noise.length;
 
+if (avgNoise >= 65) {
+
+    interpretation += `
+    <br><br>
+    ⚠️ Die durchschnittliche Lärmbelastung liegt im kritischen Bereich für Wohngebiete.
+    Langfristige Gesundheitsbelastungen sind möglich.
+    `;
+}
+else if (avgNoise >= 59) {
+
+    interpretation += `
+    <br><br>
+    ⚠️ Der Lärmpegel überschreitet typische Empfehlungen für Wohngebiete deutlich.
+    `;
+}
+else if (avgNoise >= 53) {
+
+    interpretation += `
+    <br><br>
+    ⚠️ Die WHO-Empfehlung für Straßenlärm in Wohngebieten wird überschritten.
+    `;
+}
+
+interpretation += `
+<br><br>
+📅 Analysezeitraum: ${analysisPeriod}
+`;
     document.getElementById("env_interpretation").innerHTML = interpretation;
 }
 // ============================================
