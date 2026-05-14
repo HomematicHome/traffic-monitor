@@ -1787,8 +1787,16 @@ function updateCharts() {
     let pm10 = historyData.map(e => e.pm10 || 0);
     let pollen = historyData.map(e => e.pollen || 0);
 
-    // Traffic Chart
-    destroyChart('traffic');
+// Traffic Chart
+
+if (charts.traffic) {
+
+    charts.traffic.data.labels = labels;
+    charts.traffic.data.datasets[0].data = cars;
+    charts.traffic.update('none');
+
+} else {
+
     charts.traffic = new Chart(document.getElementById("trafficChart"), {
         type: "line",
         data: {
@@ -1798,13 +1806,14 @@ function updateCharts() {
                 data: cars,
                 borderColor: "#00ff00",
                 backgroundColor: "rgba(0, 255, 0, 0.1)",
-                fill: true,
-                tension: 0.3
+                fill: false,
+                tension: 0
             }]
         },
         options: getChartOptions("Fahrzeuge")
     });
 
+}
     // Noise Chart
     destroyChart('noise');
     charts.noise = new Chart(document.getElementById("noiseChart"), {
