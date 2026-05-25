@@ -1166,9 +1166,8 @@ async function loadTraffic() {
         if (!historyData || historyData.length === 0) return;
 
         const last = historyData[historyData.length - 1];
-        
-        let noiseWeighted = calculateNoise(last);
 
+        let noiseWeighted = calculateNoise(last);
         last.noiseWeighted = noiseWeighted;
 
         document.getElementById("cars_today").textContent = last.cars_today ?? "--";
@@ -1180,7 +1179,6 @@ async function loadTraffic() {
         document.getElementById("peak1h").textContent = getPeak(last) ?? "--";
         document.getElementById("peak3s").textContent = last.peak3s ?? "--";
 
-        // Luftqualität
         document.getElementById("pm25_value").textContent = last.pm25 ?? "--";
         document.getElementById("pm10_value").textContent = last.pm10 ?? "--";
         document.getElementById("aqi_value").textContent = last.aqi ?? "--";
@@ -1197,7 +1195,6 @@ async function loadTraffic() {
         updateNoiseStatus(last);
         updatePeakStatus(last);
         updateTrafficAnalysis(last);
-        // Verkehrsphase anzeigen
         document.getElementById("rush_hour").textContent = detectTrafficPhase();
 
         updateTrafficIndex(last);
@@ -1208,19 +1205,23 @@ async function loadTraffic() {
         console.error("Fehler beim Laden:", e);
     }
 }
-//
+
+
+// ============================================
+// HISTORY LADEN
+// ============================================
+
 async function loadHistory() {
 
     try {
 
-        // CACHE PRÜFEN
-        let cached =
-            localStorage.getItem("trafficHistory");
+        // =========================
+        // CACHE CHECK
+        // =========================
 
-        let cacheTime =
-            localStorage.getItem("trafficCacheTime");
+        let cached = localStorage.getItem("trafficHistory");
+        let cacheTime = localStorage.getItem("trafficCacheTime");
 
-        // 1 Minuten gültig
         if (
             cached &&
             cacheTime &&
@@ -1229,224 +1230,177 @@ async function loadHistory() {
 
             historyData = JSON.parse(cached);
 
-            console.log(
-                "Cache geladen:",
-                historyData.length
-            );
+            console.log("Cache geladen:", historyData.length);
 
             updateWeekSummary();
             updateL271Analyse();
             updateExportPreview();
             updateEnvironmentAnalysis();
-            loadTraffic();     // ← NEU EINFÜGEN
-            updateCharts();    // ← NEU EINFÜGEN
+
+            loadTraffic();
+            updateCharts();
 
             return;
-
         }
-historyData = [];
 
-let idx = await fetch(
-    "traffic/index.json?t=" + Date.now()
-);
+        // =========================
+        // FRESH LOAD
+        // =========================
 
-if (!idx.ok) {
+        historyData = [];
 
-    console.error("index.json fehlt");
-    return;
+        let idx = await fetch("traffic/index.json?t=" + Date.now());
 
-}
+        if (!idx.ok) {
+            console.error("index.json fehlt");
+            return;
+        }
 
-let files = await idx.json();
+        let files = await idx.json();
 
-if (!Array.isArray(files)) {
+        if (!Array.isArray(files)) {
+            console.error("index.json ungültig");
+            return;
+        }
 
-    console.error("index.json ungültig");
-    return;
+        // =========================
+        // 7-TAGE-FILTER (ROBUST)
+        // =========================
 
-}
+        const cutoff = new Date();
+        cutoff.setDate(cutoff.getDate() - 7);
+        cutoff.setHours(0, 0, 0, 0);
 
-// Sortieren
-files.sort();
+        files = files.filter(f => {
 
-// Sortieren
-files.sort();
+            const match = f.match(/(\d{4}-\d{2}-\d{2})/);
 
-// ===============================
-// 7-TAGE-FILTER (FIXED VERSION)
-// ===============================
+            if (!match) return false;
 
-const cutoff = new Date();
-cutoff.setDate(cutoff.getDate() - 7);
-cutoff.setHours(0, 0, 0, 0);
+            const parts = match[1].split("-");
 
-files = files.filter(f => {
+            const fileDate = new Date(
+                Number(parts[0]),
+                Number(parts[1]) - 1,
+                Number(parts[2])
+            );
 
-    const match = f.match(/(\d{4}-\d{2}-\d{2})/);
+            return fileDate >= cutoff;
+        });
 
-    // ❌ Dateien ohne Datum NICHT laden
-    if (!match) return false;
+        files.sort();
 
-    const parts = match[1].split("-");
+        console.log("Lade Dateien:", files.length, files);
 
-    const fileDate = new Date(
-        Number(parts[0]),
-        Number(parts[1]) - 1,
-        Number(parts[2])
-    );
+        // =========================
+        // PARALLEL LOAD (SAFE JSON)
+        // =========================
 
-    return fileDate >= cutoff;
-
-});
-
-console.log(
-    "Lade Dateien:",
-    files.length,
-    files
-);
-
-        // JEDE DATEI LADEN
         await Promise.all(
 
-    files.map(async file => {
+            files.map(async file => {
 
-        try {
+                try {
 
-            let r = await fetch(
-                "traffic/" + file
-            );
+                    let r = await fetch("traffic/" + file);
 
-            if (!r.ok) {
-
-                console.warn(
-                    "Datei fehlt:",
-                    file
-                );
-
-                return;
-
-            }
-
-            let data = await r.json();
-
-            // EINZELOBJEKT
-            if (!Array.isArray(data)) {
-
-                if (data.ts && !data.date) {
-
-                    let parts = data.ts.split(" ");
-
-                    data.date = parts[0];
-
-                    if (parts[1]) {
-
-                        data.time =
-                            parts[1].substring(0,5);
-
+                    if (!r.ok) {
+                        console.warn("Datei fehlt:", file);
+                        return;
                     }
 
+                    let text = await r.text();
+
+                    if (!text || text.trim() === "") {
+                        console.warn("Leere Datei:", file);
+                        return;
+                    }
+
+                    let data;
+
+                    try {
+                        data = JSON.parse(text);
+                    } catch (e) {
+                        console.warn("Kaputte JSON:", file, text.slice(0, 100));
+                        return;
+                    }
+
+                    // =========================
+                    // NORMALIZE DATA
+                    // =========================
+
+                    const normalize = (entry) => {
+
+                        if (entry.ts && !entry.date) {
+
+                            let parts = entry.ts.split(" ");
+
+                            entry.date = parts[0];
+
+                            if (parts[1]) {
+                                entry.time = parts[1].substring(0, 5);
+                            }
+                        }
+                    };
+
+                    if (!Array.isArray(data)) {
+
+                        normalize(data);
+                        historyData.push(data);
+
+                    } else {
+
+                        data.forEach(normalize);
+                        historyData.push(...data);
+                    }
+
+                } catch (e) {
+                    console.error("Dateifehler:", file, e);
                 }
 
-                historyData.push(data);
+            })
 
-            }
+        );
 
-            // ARRAYDATEI
-            else {
+        // =========================
+        // SORT BY TIME
+        // =========================
 
-                data.forEach(entry => {
+        historyData.sort((a, b) => {
 
-                    if (entry.ts && !entry.date) {
+            let ta = new Date(a.ts || (a.date + " " + a.time));
+            let tb = new Date(b.ts || (b.date + " " + b.time));
 
-                        let parts =
-                            entry.ts.split(" ");
-
-                        entry.date = parts[0];
-
-                        if (parts[1]) {
-
-                            entry.time =
-                                parts[1].substring(0,5);
-
-                        }
-
-                    }
-
-                });
-
-                historyData.push(...data);
-
-            }
-
-        } catch(e) {
-
-            console.error(
-                "Dateifehler:",
-                file,
-                e
-            );
-
-        }
-
-    })
-
-);
+            return ta - tb;
+        });
 
         console.log("History geladen:", historyData.length);
 
-        // NACH ZEIT SORTIEREN
-       historyData.sort((a,b) => {
+        // =========================
+        // CACHE SAVE
+        // =========================
 
-    let ta = new Date(
-        a.ts || (a.date + " " + a.time)
-    );
+        localStorage.setItem("trafficHistory", JSON.stringify(historyData));
+        localStorage.setItem("trafficCacheTime", Date.now());
 
-    let tb = new Date(
-        b.ts || (b.date + " " + b.time)
-    );
+        // =========================
+        // DASHBOARD UPDATE
+        // =========================
 
-    return ta - tb;
+        if (historyData.length > 0) {
 
-});
+            updateWeekSummary();
+            updateL271Analyse();
+            updateExportPreview();
+            updateEnvironmentAnalysis();
 
-localStorage.setItem(
-    "trafficHistory",
-    JSON.stringify(historyData)
-);
+            loadTraffic();
+            updateCharts();
+        }
 
-localStorage.setItem(
-    "trafficCacheTime",
-    Date.now()
-);
-
-console.log(
-    "History geladen:",
-    historyData.length
-);
-
-// DASHBOARD UPDATE
-if (historyData.length > 0) {
-
-    updateWeekSummary();
-
-    updateL271Analyse();
-
-    updateExportPreview();
-
-    updateEnvironmentAnalysis();
-
-    loadTraffic();    
-    
-    updateCharts();  
-
-}
-
-} catch(e) {
-
-    console.error("History Fehler:", e);
-
-}
-
+    } catch (e) {
+        console.error("History Fehler:", e);
+    }
 }
 // EU Lärm Berechnen======================
 function calculateLden(dataArray) {
