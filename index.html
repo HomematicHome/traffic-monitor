@@ -710,58 +710,43 @@ Diese Heatmap zeigt die durchschnittliche Feinstaubbelastung
 
 <h1>Umweltanalyse</h1>
 <p>Zusammenhang zwischen Verkehr, Lärm und Luftverschmutzung auf der L271</p>
-
 <div class="analyse-grid">
-
 <div class="analyse-card">
 <h3>🚗 Verkehr → Lärm</h3>
 <div class="analyse-value" id="corr_cars_noise">--</div>
 <div class="analyse-label">Korrelation</div>
 </div>
-
 <div class="analyse-card">
 <h3>🚗 Verkehr → PM10</h3>
 <div class="analyse-value" id="corr_cars_pm10">--</div>
 <div class="analyse-label">Korrelation</div>
 </div>
-
 <div class="analyse-card">
 <h3>🚗 Verkehr → PM2.5</h3>
 <div class="analyse-value" id="corr_cars_pm25">--</div>
 <div class="analyse-label">Korrelation</div>
 </div>
-
 <div class="analyse-card">
 <h3>📊 Interpretation</h3>
 <div id="env_interpretation">--</div>
 </div>
-
 </div>
-
-</div>
-
 <div class="analyse-card">
 <h3>🌫 Feinstaub-Ursache heute</h3>
-
 <div id="pm_source">
-
 🚗 Verkehr: -- %<br>
 🌼 Pollen: -- %<br>
 🌍 Hintergrund: -- %
-
 </div>
-
 </div>
 </div>
     <!-- EXPORT -->
     <div id="export" class="page">
         <h1>Daten Export</h1>
         <p>Exportiere die gesammelten Verkehrs- und Lärmdaten</p>
-
         <button class="export-btn" onclick="exportCSV()">📥 CSV herunterladen</button>
         <button class="export-btn" onclick="exportJSON()">📥 JSON herunterladen</button>
         <button class="export-btn" onclick="exportAnalyse()">📥 Analysebericht (TXT)</button>
-
         <div class="chart-container" style="margin-top: 30px;">
             <h3>Datenvorschau</h3>
             <p><strong id="export_count">--</strong> Datensätze verfügbar</p>
@@ -769,7 +754,6 @@ Diese Heatmap zeigt die durchschnittliche Feinstaubbelastung
             <pre id="export_preview" style="background:#000; padding:15px; border-radius:6px; overflow-x:auto; max-height:300px; font-size:12px;"></pre>
         </div>
     </div>
-
     <!-- MAP -->
     <div id="map" class="page">
         <h1>Messstrecke</h1>
