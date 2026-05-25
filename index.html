@@ -596,8 +596,10 @@ ausschließlich der allgemeinen Information.
 <canvas id="pm10Chart"></canvas>
 </div>
 </div>
+
+</div>
     
- <div id="heatmap_pm" class="page">
+<div id="heatmap_pm" class="page">
 <h1>Feinstaub Heatmap (24h × 7 Tage)</h1>
 <p>
 Diese Heatmap zeigt die durchschnittliche Feinstaubbelastung
@@ -1242,43 +1244,55 @@ async function loadHistory() {
             return;
 
         }
+historyData = [];
 
-        historyData = [];
+let idx = await fetch(
+    "traffic/index.json?t=" + Date.now()
+);
 
-        // INDEX LADEN
-        let idx = await fetch(
-            "traffic/index.json"
-        );
+if (!idx.ok) {
 
-        if (!idx.ok) {
+    console.error("index.json fehlt");
+    return;
 
-            console.error("index.json fehlt");
-            return;
+}
 
-        }
+let files = await idx.json();
 
-        // DATEILISTE
-        let files = await idx.json();
+if (!Array.isArray(files)) {
 
-        if (!Array.isArray(files)) {
+    console.error("index.json ungültig");
+    return;
 
-            console.error("index.json ungültig");
-            return;
+}
 
-        }
+// Sortieren
+files.sort();
 
-        // SORTIEREN
-        files.sort();
+// robuster 7-Tage-Filter
+const cutoff = new Date();
+cutoff.setDate(cutoff.getDate() - 7);
+cutoff.setHours(0,0,0,0);
 
-        const cutoff = new Date();
-        cutoff.setDate(cutoff.getDate() - 7);
+files = files.filter(f => {
 
-        files = files.filter(f => {
-            const fileDate = f.substring(0, 10);
-            return new Date(fileDate) >= cutoff;
-        });
+    // Datum aus Dateiname suchen
+    const match =
+        f.match(/(\d{4}-\d{2}-\d{2})/);
 
-        console.log("Dateien gefunden:", files.length);
+    // wenn kein Datum im Namen → trotzdem laden
+    if (!match)
+        return true;
+
+    return new Date(match[1]) >= cutoff;
+
+});
+
+console.log(
+    "Lade Dateien:",
+    files.length,
+    files
+);
 
         // JEDE DATEI LADEN
         await Promise.all(
