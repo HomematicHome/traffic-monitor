@@ -1224,11 +1224,11 @@ async function loadHistory() {
         let cacheTime =
             localStorage.getItem("trafficCacheTime");
 
-        // 5 Minuten gültig
+        // 1 Minuten gültig
         if (
             cached &&
             cacheTime &&
-            (Date.now() - cacheTime < 300000)
+            (Date.now() - cacheTime < 60000)
         ) {
 
             historyData = JSON.parse(cached);
