@@ -1269,22 +1269,33 @@ if (!Array.isArray(files)) {
 // Sortieren
 files.sort();
 
-// robuster 7-Tage-Filter
+// Sortieren
+files.sort();
+
+// ===============================
+// 7-TAGE-FILTER (FIXED VERSION)
+// ===============================
+
 const cutoff = new Date();
 cutoff.setDate(cutoff.getDate() - 7);
-cutoff.setHours(0,0,0,0);
+cutoff.setHours(0, 0, 0, 0);
 
 files = files.filter(f => {
 
-    // Datum aus Dateiname suchen
-    const match =
-        f.match(/(\d{4}-\d{2}-\d{2})/);
+    const match = f.match(/(\d{4}-\d{2}-\d{2})/);
 
-    // wenn kein Datum im Namen → trotzdem laden
-    if (!match)
-        return true;
+    // ❌ Dateien ohne Datum NICHT laden
+    if (!match) return false;
 
-    return new Date(match[1]) >= cutoff;
+    const parts = match[1].split("-");
+
+    const fileDate = new Date(
+        Number(parts[0]),
+        Number(parts[1]) - 1,
+        Number(parts[2])
+    );
+
+    return fileDate >= cutoff;
 
 });
 
