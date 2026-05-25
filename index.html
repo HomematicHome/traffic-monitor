@@ -2837,15 +2837,24 @@ function formatDate(dateStr) {
 loadHistory().then(() => {
 
     loadTraffic();
-
     updateCharts();
 
 });
 
-// Dashboard Update alle 60 Sekunden
+// Dashboard Update alle 5 Minuten (History neu laden)
+setInterval(async () => {
+
+    await loadHistory();
+
+    loadTraffic();
+    updateCharts();
+
+}, 300000);
+
+// Dashboard Anzeige jede Minute aktualisieren (nur UI, keine History)
 setInterval(loadTraffic, 60000);
+
 </script>
 
 </body>
-
 </html>
