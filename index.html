@@ -1791,11 +1791,26 @@ function updateLawCheck(data) {
 
     let text, cls;
 
-    if (noise >= 70) { text = `Gesundheitskritisch (${noise} dB)`; cls = "status-critical"; }
-    else if (noise >= 65) { text = `Kritische Belastung (${noise} dB)`; cls = "status-bad"; }
-    else if (noise >= 59) { text = `Über Neubau-Grenzwert (${noise} dB)`; cls = "status-bad"; }
-    else if (noise >= 53) { text = `Über WHO-Empfehlung (${noise} dB)`; cls = "status-warn"; }
-    else { text = `Unter WHO-Empfehlung (${noise} dB)`; cls = "status-good"; }
+    if (noise >= 70) {
+        text = `Gesundheitskritisch (${noise} dB)`;
+        cls = "status-critical";
+    }
+    else if (noise >= 67) {
+        text = `Hohe Belastung / möglicher Sanierungsbedarf Bestand* (${noise} dB)`;
+        cls = "status-bad";
+    }
+    else if (noise >= 59) {
+        text = `Über Neubau-Grenzwert (${noise} dB)`;
+        cls = "status-bad";
+    }
+    else if (noise >= 53) {
+        text = `Über WHO-Empfehlung (${noise} dB)`;
+        cls = "status-warn";
+    }
+    else {
+        text = `Unter WHO-Empfehlung (${noise} dB)`;
+        cls = "status-good";
+    }
 
     document.getElementById("law_result").innerHTML =
         `<span class="${cls}">${text}</span>`;
