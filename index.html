@@ -1262,7 +1262,6 @@ async function loadHistory() {
 
         // =========================
         // ALLE JSON DATEIEN LADEN
-        // KEIN 7-TAGE FILTER
         // =========================
 
         files = files.filter(f => f.endsWith(".json"));
@@ -1272,7 +1271,7 @@ async function loadHistory() {
         console.log("Lade Dateien:", files.length, files);
 
         // =========================
-        // PARALLEL LOAD (SAFE JSON)
+        // PARALLEL LOAD
         // =========================
 
         await Promise.all(
@@ -1284,23 +1283,33 @@ async function loadHistory() {
                     let r = await fetch("traffic/" + file);
 
                     if (!r.ok) {
-                        console.warn("Datei fehlt:", file);
                         return;
                     }
 
                     let text = await r.text();
 
-                    if (!text || text.trim() === "") {
-                        console.warn("Leere Datei:", file);
+                    // =========================
+                    // LEERE DATEIEN IGNORIEREN
+                    // =========================
+
+                    if (
+                        !text ||
+                        text.trim() === "" ||
+                        text.trim() === "[]" ||
+                        text.trim() === "{}"
+                    ) {
                         return;
                     }
 
                     let data;
 
                     try {
+
                         data = JSON.parse(text);
+
                     } catch (e) {
-                        console.warn("Kaputte JSON:", file, text.slice(0, 100));
+
+                        // kaputte JSON still ignorieren
                         return;
                     }
 
@@ -1309,6 +1318,10 @@ async function loadHistory() {
                     // =========================
 
                     const normalize = (entry) => {
+
+                        if (!entry || typeof entry !== "object") {
+                            return;
+                        }
 
                         if (entry.ts && !entry.date) {
 
@@ -1325,16 +1338,28 @@ async function loadHistory() {
                     if (!Array.isArray(data)) {
 
                         normalize(data);
-                        historyData.push(data);
+
+                        if (data && typeof data === "object") {
+                            historyData.push(data);
+                        }
 
                     } else {
 
-                        data.forEach(normalize);
-                        historyData.push(...data);
+                        data.forEach(entry => {
+
+                            normalize(entry);
+
+                            if (entry && typeof entry === "object") {
+                                historyData.push(entry);
+                            }
+
+                        });
                     }
 
                 } catch (e) {
-                    console.error("Dateifehler:", file, e);
+
+                    // einzelne defekte Datei ignorieren
+                    return;
                 }
 
             })
@@ -1382,9 +1407,14 @@ async function loadHistory() {
 
             loadTraffic();
             updateCharts();
+
+        } else {
+
+            console.warn("Keine gültigen Datensätze gefunden");
         }
 
     } catch (e) {
+
         console.error("History Fehler:", e);
     }
 }
