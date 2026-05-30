@@ -1211,6 +1211,9 @@ async function loadHistory() {
 
     try {
 
+        localStorage.removeItem("trafficHistory");
+        localStorage.removeItem("trafficCacheTime");
+
         // =========================
         // CACHE CHECK
         // =========================
@@ -1279,7 +1282,9 @@ async function loadHistory() {
 
                 try {
 
-                    let r = await fetch("traffic/" + file);
+                    let r = await fetch("traffic/" + file + "?t=" + Date.now(), {
+                        cache: "no-store"
+                    });
 
                     if (!r.ok) {
                         return;
@@ -2826,7 +2831,6 @@ function formatDate(dateStr) {
 // ============================================
 // INITIALISIERUNG
 // ============================================
-
 loadHistory().then(() => {
 
     loadTraffic();
@@ -2834,18 +2838,19 @@ loadHistory().then(() => {
 
 });
 
-// Dashboard Update alle 5 Minuten (History neu laden)
+// Daten alle 30 Sekunden komplett neu laden
 setInterval(async () => {
+
+    localStorage.removeItem("trafficHistory");
+    localStorage.removeItem("trafficCacheTime");
 
     await loadHistory();
 
     loadTraffic();
     updateCharts();
 
-}, 300000);
+}, 30000);
 
-// Dashboard Anzeige jede Minute aktualisieren (nur UI, keine History)
-setInterval(loadTraffic, 60000);
 
 </script>
 
