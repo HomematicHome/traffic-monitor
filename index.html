@@ -1844,7 +1844,7 @@ let validPM25 = historyData.filter(e =>
 let trafficShare = Math.max(0, corrPM10) * 100;
 
 let pollenToday = historyData[historyData.length - 1]?.pollen || 0;
-let pollenShare = pollenToday * 20;
+let pollenShare = pollenToday * 4;
 
 if (pollenShare > 40) pollenShare = 40;
 
