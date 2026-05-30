@@ -1795,12 +1795,8 @@ function updateLawCheck(data) {
         text = `Gesundheitskritisch (${noise} dB)`;
         cls = "status-critical";
     }
-    else if (noise >= 67) {
-        text = `Hohe Belastung / möglicher Sanierungsbedarf Bestand* (${noise} dB)`;
-        cls = "status-bad";
-    }
     else if (noise >= 59) {
-        text = `Über Neubau-Grenzwert (${noise} dB)`;
+        text = `Hohe Belastung (${noise} dB)`;
         cls = "status-bad";
     }
     else if (noise >= 53) {
