@@ -1208,9 +1208,6 @@ async function loadTraffic() {
 
 
 // ============================================
-// HISTORY LADEN
-// ============================================
-
 async function loadHistory() {
 
     try {
@@ -1264,29 +1261,11 @@ async function loadHistory() {
         }
 
         // =========================
-        // 7-TAGE-FILTER (ROBUST)
+        // ALLE JSON DATEIEN LADEN
+        // KEIN 7-TAGE FILTER
         // =========================
 
-        const cutoff = new Date();
-        cutoff.setDate(cutoff.getDate() - 7);
-        cutoff.setHours(0, 0, 0, 0);
-
-        files = files.filter(f => {
-
-            const match = f.match(/(\d{4}-\d{2}-\d{2})/);
-
-            if (!match) return false;
-
-            const parts = match[1].split("-");
-
-            const fileDate = new Date(
-                Number(parts[0]),
-                Number(parts[1]) - 1,
-                Number(parts[2])
-            );
-
-            return fileDate >= cutoff;
-        });
+        files = files.filter(f => f.endsWith(".json"));
 
         files.sort();
 
@@ -1380,8 +1359,15 @@ async function loadHistory() {
         // CACHE SAVE
         // =========================
 
-        localStorage.setItem("trafficHistory", JSON.stringify(historyData));
-        localStorage.setItem("trafficCacheTime", Date.now());
+        localStorage.setItem(
+            "trafficHistory",
+            JSON.stringify(historyData)
+        );
+
+        localStorage.setItem(
+            "trafficCacheTime",
+            Date.now()
+        );
 
         // =========================
         // DASHBOARD UPDATE
