@@ -2617,16 +2617,18 @@ document.getElementById("lden_status").innerHTML =
     
     
     // Grenzwertüberschreitungen
-    let total = allNoise.length;
     let exceedWho = allNoise.filter(n => n >= 53).length;
     let exceed59 = allNoise.filter(n => n >= 59).length;
-    let exceed65 = allNoise.filter(n => n >= 65).length;
     let exceed70 = allNoise.filter(n => n >= 70).length;
 
-    document.getElementById("exceed_who").innerHTML = `${exceedWho}/${total} <small>(${(exceedWho/total*100).toFixed(0)}%)</small>`;
-    document.getElementById("exceed_59").innerHTML = `${exceed59}/${total} <small>(${(exceed59/total*100).toFixed(0)}%)</small>`;
-    document.getElementById("exceed_65").innerHTML = `${exceed65}/${total} <small>(${(exceed65/total*100).toFixed(0)}%)</small>`;
-    document.getElementById("exceed_70").innerHTML = `${exceed70}/${total} <small>(${(exceed70/total*100).toFixed(0)}%)</small>`;
+    document.getElementById("exceed_who").innerHTML =
+        `${exceedWho}/${total} <small>(${(exceedWho/total*100).toFixed(0)}%)</small>`;
+
+    document.getElementById("exceed_59").innerHTML =
+        `${exceed59}/${total} <small>(${(exceed59/total*100).toFixed(0)}%)</small>`;
+
+    document.getElementById("exceed_70").innerHTML =
+        `${exceed70}/${total} <small>(${(exceed70/total*100).toFixed(0)}%)</small>`;
 
     // Spitzenzeiten
     let maxNoiseEntry = historyData.reduce((max, e) => {
