@@ -407,11 +407,9 @@ canvas {
                 <h2>Lärmgrenzwerte</h2>
 
                 <div class="lawbox">
-                    WHO Empfehlung: <strong>53 dB</strong><br>
-                    Grenzwert Neubau: <strong>59 dB</strong><br>
-                    Kritische Belastung: <strong>65 dB</strong><br>
-                    Lärmsanierung Bestand: <strong>67 dB</strong><br>
-                    Gesundheitskritisch: <strong>70 dB</strong><br><br>
+                    WHO Empfehlung: 53 dB<br>
+                    Erhöhte, kritische Lärmbelastung: ab 59 dB<br>
+                    Gesundheitskritisch: ab 70 dB<br><br>
                     Aktueller Durchschnitt: <strong id="law_result">--</strong>
                 </div>
 
@@ -1800,8 +1798,8 @@ function updateLawCheck(data) {
         cls = "status-critical";
     }
     else if (noise >= 59) {
-        text = `Hohe Belastung (${noise} dB)`;
-        cls = "status-bad";
+        text = `Erhöhte Lärmbelastung (${noise} dB)`;
+        cls = "status-warn";
     }
     else if (noise >= 53) {
         text = `Über WHO-Empfehlung (${noise} dB)`;
