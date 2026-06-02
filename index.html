@@ -2672,6 +2672,8 @@ document.getElementById("lden_status").innerHTML =
     
     
     // Grenzwertüberschreitungen
+    const total = allNoise.length || 1;
+    
     let exceedWho = allNoise.filter(n => n >= 53).length;
     let exceed59 = allNoise.filter(n => n >= 59).length;
     let exceed70 = allNoise.filter(n => n >= 70).length;
